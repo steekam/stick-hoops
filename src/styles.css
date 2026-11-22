@@ -109,3 +109,11 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 
 /* The court frame is drawn twice, slightly off, like a pencil box gone over. */
 .court { outline: 1px solid var(--ink); outline-offset: 3px; }
+
+/* Look switcher (prototype; candidate for a settings panel). */
+.themes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.themes span { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); margin-right: 4px; }
+.themes button { border: 2px solid var(--ink); background: transparent; padding: 5px 10px; font-size: 12px; font-weight: 600; }
+.themes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.themes .toggle { margin-left: 8px; }
+.themes .toggle[aria-pressed="false"] { border-style: dashed; color: var(--mute); border-color: var(--mute); }

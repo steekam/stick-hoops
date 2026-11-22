@@ -7,6 +7,8 @@ import { drawFigure } from './figure';
 import { flatCircle, hatch, path, proj, Z_BACK, Z_FRONT } from './iso';
 import { Pen } from './pen';
 import { drawCourtLines } from './court';
+import { drawBackdrop, drawBackdropLive, drawScoreboard, floorFill } from './backdrops';
+import { settings } from '../settings';
 
 const FONT = 'ui-monospace, Menlo, Consolas, monospace';
 
@@ -102,6 +104,12 @@ export class Renderer {
     ctx.lineJoin = 'round';
 
     const h = hoopGeom(g.world, g.tick);
+    const st = settings();
+    drawBackdropLive(ctx, st.backdrop, pen.c, g.time);
+    if (st.scoreboard) {
+      const hud = g.mode?.hud(g);
+      drawScoreboard(ctx, pen.c, hud ? { big: hud.right, small: hud.mid, label: hud.left } : { big: '00', small: '', label: 'Stick Hoops' });
+    }
     this.drawWind(g);
     this.drawShadows(g, h);
     this.drawHoopBack(g, h);
@@ -134,7 +142,7 @@ export class Renderer {
 
   private court(): HTMLCanvasElement {
     const { canvas, pen } = this, c = pen.c;
-    const key = `${canvas.width}x${canvas.height}|${c.paper}|${c.ink}|${c.mute}|${c.faint}|${c.accent}|${c.wood}|${c.paint}`;
+    const key = `${canvas.width}x${canvas.height}|${c.paper}|${c.ink}|${c.mute}|${c.faint}|${c.accent}|${c.wood}|${c.paint}|${settings().backdrop}`;
     if (this.bg && key === this.bgKey) return this.bg;
     const bg = this.bg ?? document.createElement('canvas');
     bg.width = canvas.width; bg.height = canvas.height;
@@ -153,11 +161,13 @@ export class Renderer {
     x.stroke();
     x.globalAlpha = 1;
 
+    drawBackdrop(x, settings().backdrop, c);
+
     // The floor: a plane seen from above, with a thick front edge like a stage.
     const A = proj(-260, FLOOR, Z_FRONT), B = proj(W + 120, FLOOR, Z_FRONT);
     const C = proj(W + 120, FLOOR, Z_BACK), D = proj(-260, FLOOR, Z_BACK);
     path(x, [A, B, C, D], true);
-    x.fillStyle = c.wood; x.fill(); // hardwood
+    x.fillStyle = floorFill(settings().backdrop, c); x.fill(); // hardwood indoors, asphalt outside
     // Floor shading: light hatching everywhere, a second pass darkening toward the back.
     x.strokeStyle = c.mute; x.lineWidth = 0.7; x.globalAlpha = 0.22;
     path(x, [A, B, C, D], true); hatch(x, box([A, B, C, D]), 11, -0.42);
@@ -184,7 +194,7 @@ export class Renderer {
     path(x, [D, C]); x.stroke();
     const A2 = { x: A.x, y: A.y + 10 }, B2 = { x: B.x, y: B.y + 10 };
     path(x, [A, B, B2, A2], true);
-    x.fillStyle = c.wood; x.fill();
+    x.fillStyle = floorFill(settings().backdrop, c); x.fill();
     x.strokeStyle = c.ink; x.lineWidth = 1; x.globalAlpha = 0.55;
     path(x, [A, B, B2, A2], true); hatch(x, box([A, B, B2, A2]), 4, Math.PI / 4);
     x.globalAlpha = 1; x.lineWidth = 2.4;
