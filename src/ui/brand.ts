@@ -1,33 +1,24 @@
-// Stick Hoops brand: a pencil-sketch mark (a stick figure's jump shot arcing into a ring)
-// and the wordmark. Everything uses currentColor, so it follows the light and dark themes.
+// Stick Hoops brand: a pencil-sketch mark (the ball dropping through the ring) and the
+// wordmark. Everything uses currentColor, so it follows the light and dark themes.
 // The same drawings are exported as standalone files in public/brand/.
 
-/** The mark: shooter bottom left, a dashed arc, the ball, and a hoop drawn as a ring with depth. */
-export const MARK = `<svg class="mark" viewBox="0 0 96 96" role="img" aria-label="Stick Hoops" focusable="false">
+/** The mark: the ball dropping through the ring. One idea, bold enough to read at favicon size. */
+export const MARK = `<svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Stick Hoops" focusable="false">
   <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-    <!-- ground, with a hatched shadow under the shooter -->
-    <path d="M6 86 Q48 84.5 90 86" stroke-width="2.2"/>
-    <path d="M14 89l4-3M19 89l4-3M24 89l4-3M29 89l4-3" stroke-width="1.1" opacity=".6"/>
-    <!-- shooter mid jump shot -->
-    <circle cx="20" cy="49" r="5.6" stroke-width="2.6"/>
-    <path d="M20.5 55 L22 71 M22 71 L16 83 M22 71 L28 82 M21 59 L29 48 L32 43 M21 60 L28 51" stroke-width="2.6"/>
-    <path d="M21.6 55.4 L23.1 70.6" stroke-width="1" opacity=".45"/>
-    <!-- the arc -->
-    <path d="M34 38 Q46 8 62 22" stroke-width="1.8" stroke-dasharray="2.6 4.2"/>
-    <!-- backboard as a slab, and the pole -->
-    <path d="M80 12 L86 9 L86 33 L80 36 Z" stroke-width="2.2"/>
-    <path d="M81.5 15l3-2M81.5 19l3-2M81.5 23l3-2M81.5 27l3-2M81.5 31l3-2" stroke-width="1" opacity=".7"/>
-    <path d="M86 21 L90 21 L90 86" stroke-width="2.4"/>
-    <!-- rim as a ring, net hanging below -->
-    <ellipse cx="70" cy="30" rx="10" ry="3.4" stroke-width="2.6"/>
-    <path d="M60.5 31 L64 42 M65 33 L67 42.5 M70 33.4 L70 43 M75 33 L73 42.5 M79.5 31 L76 42 M64 42 Q70 44.5 76 42" stroke-width="1.3"/>
-    <path d="M80 30 L80 32" stroke-width="2.4"/>
+    <!-- motion: two pencil dashes trailing the ball -->
+    <path d="M10 12 L17 16 M8 20 L14 22" stroke-width="2.6"/>
+    <!-- back of the rim, behind the ball -->
+    <path d="M10 40 Q32 31 54 40" stroke-width="3"/>
     <!-- the ball, shaded on the lower right -->
-    <circle cx="62" cy="22" r="7" stroke-width="2.4"/>
-    <path d="M55 22 H69 M62 15 V29 M57.2 16.8 Q60.5 22 57.2 27.2 M66.8 16.8 Q63.5 22 66.8 27.2" stroke-width="1.1"/>
-    <path d="M64.5 28l3.5-3.5M61.5 28.8l6.5-6.5M66.5 20.5l1.8-1.8" stroke-width="1" opacity=".6"/>
+    <circle cx="32" cy="27" r="12" stroke-width="3.6" style="fill:var(--paper,#fbfbf8)"/>
+    <path d="M20.5 27 H43.5 M32 15 V39 M24 18.5 Q29.5 27 24 35.5 M40 18.5 Q34.5 27 40 35.5" stroke-width="1.8"/>
+    <path d="M36 37.5 L42.5 31 M31 38.8 L43.8 26 M40.5 24.5 L43.6 21.4" stroke-width="1.4" opacity=".7"/>
+    <!-- net -->
+    <path d="M12 43 L19 58 M22 45.5 L25 59 M32 46 L32 60 M42 45.5 L39 59 M52 43 L45 58 M19 58 Q32 62.5 45 58" stroke-width="2"/>
+    <!-- front of the rim, over the ball, so it reads as dropping in -->
+    <path d="M10 40 Q32 51 54 40" stroke-width="4.4"/>
   </g>
 </svg>`;
 
 /** Small mark for the favicon: just the ball dropping into the ring. */
-export const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><g fill="none" stroke="#121211" stroke-linecap="round" stroke-width="2.4"><circle cx="16" cy="9" r="6" fill="#fbfbf8"/><path d="M10 9h12M16 3v12" stroke-width="1.2"/><ellipse cx="16" cy="19" rx="11" ry="3.4" fill="none"/><path d="M6 20l4 9M26 20l-4 9M10 29q6 2 12 0M16 22.5v6.5" stroke-width="1.5"/></g></svg>`;
+export const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="none" stroke="#121211" stroke-linecap="round" stroke-linejoin="round"><path d="M10 40 Q32 31 54 40" stroke-width="3.4"/><circle cx="32" cy="27" r="12" stroke-width="4.4" fill="#fbfbf8"/><path d="M20.5 27 H43.5 M32 15 V39" stroke-width="2.4"/><path d="M12 43 L19 58 M32 46 L32 60 M52 43 L45 58 M19 58 Q32 62.5 45 58" stroke-width="2.8"/><path d="M10 40 Q32 51 54 40" stroke-width="5.2"/></g></svg>`;

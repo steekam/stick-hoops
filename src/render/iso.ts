@@ -2,8 +2,8 @@
 // that touches the ball lives in the plane z = 0. Depth (z) is pushed up and to the right,
 // so the court reads as a floor seen from slightly above and in front.
 
-export const KX = 0.55;
-export const KY = -0.32;
+export const KX = 0.2;
+export const KY = -0.36;
 
 /** World point (x, y) at depth z → screen point in world units. */
 export const proj = (x: number, y: number, z: number) => ({ x: x + z * KX, y: y + z * KY });
