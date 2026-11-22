@@ -192,7 +192,7 @@ export function sabotage(first: Side = 0): Mode {
       // Power meters, top right, well above the backboard (its top sits near y 194).
       const c = g.renderer.pen.c;
       ctx.save();
-      ctx.font = '600 12px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.font = '600 12px ui-monospace, Menlo, Consolas, monospace';
       ctx.textBaseline = 'middle';
       ctx.lineWidth = 2;
       const shooter = sabShooter(st);

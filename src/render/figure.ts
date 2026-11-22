@@ -127,7 +127,7 @@ export function drawFigure(p: Pen, g: Game): FigureOut {
   p.boil = false;
 
   if (player.tag) {
-    ctx.fillStyle = p.c.ink; ctx.font = '600 12px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = p.c.ink; ctx.font = '600 12px ui-monospace, Menlo, Consolas, monospace';
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     ctx.fillText(player.tag, head.x, head.y - 22);
     ctx.textAlign = 'left';

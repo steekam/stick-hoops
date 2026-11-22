@@ -6,6 +6,8 @@ import type { Game } from '../game/game';
 import { drawFigure } from './figure';
 import { Pen } from './pen';
 
+const FONT = 'ui-monospace, Menlo, Consolas, monospace';
+
 // Black is for what you play with (figure, ball, hoop, wall); grey is scenery.
 
 interface Pop { x: number; y: number; t: number; txt: string; align: CanvasTextAlign }
@@ -102,7 +104,7 @@ export class Renderer {
     if (g.showHint && !g.aim && !g.ball) this.drawHint(g);
     for (const p of this.pops) {
       ctx.globalAlpha = 1 - p.t / 1.2;
-      ctx.fillStyle = pen.c.ink; ctx.font = '22px "Rubik Mono One", ui-monospace, monospace';
+      ctx.fillStyle = pen.c.ink; ctx.font = '800 22px ' + FONT;
       ctx.textAlign = p.align; ctx.textBaseline = 'alphabetic';
       ctx.fillText(p.txt, Math.max(8, p.x), p.y - p.t * 50);
       ctx.textAlign = 'left';
@@ -145,7 +147,7 @@ export class Renderer {
     for (const s of this.gusts) pen.seg({ x: s.x, y: s.y }, { x: s.x - Math.sign(wind) * s.l, y: s.y });
     const L = Math.min(Math.abs(wind) / 3, 80), sgn = Math.sign(wind), cx = 86, cy = 32;
     ctx.strokeStyle = pen.c.ink; ctx.fillStyle = pen.c.ink; ctx.lineWidth = 2.5;
-    ctx.font = '600 12px "IBM Plex Mono", ui-monospace, monospace'; ctx.textBaseline = 'middle';
+    ctx.font = '600 12px ui-monospace, Menlo, Consolas, monospace'; ctx.textBaseline = 'middle';
     ctx.fillText('WIND', 24, cy);
     const x0 = sgn > 0 ? cx : cx + L, x1 = sgn > 0 ? cx + L : cx;
     pen.seg({ x: x0, y: cy }, { x: x1, y: cy }); pen.seg({ x: x1, y: cy }, { x: x1 - sgn * 8, y: cy - 6 }); pen.seg({ x: x1, y: cy }, { x: x1 - sgn * 8, y: cy + 6 });
@@ -179,7 +181,7 @@ export class Renderer {
 
   private drawHint(g: Game): void {
     const { pen, ctx } = this;
-    ctx.fillStyle = pen.c.ink; ctx.font = '600 13px "IBM Plex Mono", ui-monospace, monospace'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = pen.c.ink; ctx.font = '600 13px ui-monospace, Menlo, Consolas, monospace'; ctx.textBaseline = 'alphabetic';
     const tx = Math.max(20, g.player.x - 150), ty = FLOOR - 230;
     ctx.fillText('PRESS, PULL BACK, LET GO', tx, ty);
     ctx.strokeStyle = pen.c.ink; ctx.lineWidth = 2;
@@ -201,7 +203,7 @@ export class Renderer {
       ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       if (m === 'ooh') { ctx.beginPath(); ctx.arc(hx + 2, hy + 2, 1.6, 0, Math.PI * 2); ctx.stroke(); }
     }
-    if (m === 'ooh') { ctx.fillStyle = pen.c.mute; ctx.font = '600 12px "IBM Plex Mono", ui-monospace, monospace'; ctx.textBaseline = 'alphabetic'; ctx.fillText('OOOH', 650, FLOOR + 36); }
+    if (m === 'ooh') { ctx.fillStyle = pen.c.mute; ctx.font = '600 12px ui-monospace, Menlo, Consolas, monospace'; ctx.textBaseline = 'alphabetic'; ctx.fillText('OOOH', 650, FLOOR + 36); }
   }
 
   private drawBird(): void {

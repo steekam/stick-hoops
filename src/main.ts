@@ -5,7 +5,6 @@ import { LEVELS, levels, LevelsMode, unlockedLevel } from './modes/solo/levels';
 import type { ModeEntry } from './modes/registry';
 import { createMenu } from './ui/menu';
 import { createShell } from './ui/shell';
-import { installTestHooks } from './game/testing';
 import { tutorial, tutorialDone } from './ui/tutorial';
 
 const canvas = document.getElementById('court') as HTMLCanvasElement;
@@ -72,6 +71,8 @@ let last = performance.now();
 function frame(now: number): void {
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
+  // Behind the menu nothing is visible, so skip the work entirely.
+  if (menu.open) { requestAnimationFrame(frame); return; }
   game.update(dt);
   game.draw();
   requestAnimationFrame(frame);
@@ -82,4 +83,7 @@ requestAnimationFrame(frame);
 (window as unknown as { game: Game }).game = game;
 // End-to-end test hooks: only with ?e2e in the URL or in dev. Harmless to players either way,
 // since scores will be verified by the server.
-if (import.meta.env.DEV || new URLSearchParams(location.search).has('e2e')) installTestHooks(game);
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('e2e')) {
+  // Loaded on demand so players never download the test code.
+  import('./game/testing').then((m) => m.installTestHooks(game));
+}

@@ -112,7 +112,7 @@ export class Game {
   refreshHud(force = false): void {
     if (!this.mode) return;
     const h = this.mode.hud(this);
-    const key = JSON.stringify(h);
+    const key = `${h.left}\u0000${h.mid}\u0000${h.right}\u0000${h.rightNote ?? ''}`;
     if (!force && key === this.hudKey) return;
     this.hudKey = key;
     this.ui.setHud(h);
