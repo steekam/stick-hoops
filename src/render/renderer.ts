@@ -7,7 +7,7 @@ import { drawFigure } from './figure';
 import { flatCircle, hatch, path, proj, Z_BACK, Z_FRONT } from './iso';
 import { Pen } from './pen';
 import { drawCourtLines } from './court';
-import { drawBackdrop, drawBackdropLive, drawScoreboard, floorFill } from './backdrops';
+import { drawBackdrop, drawBackdropLive, drawScoreboard, floorFill } from './backdrops/index';
 import { settings } from '../settings';
 
 const FONT = 'ui-monospace, Menlo, Consolas, monospace';
