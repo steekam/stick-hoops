@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512"><title>Stick Hoops</title><rect width="64" height="64" fill="#fbfbf8"/><g fill="none" stroke="#121211" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 12 L17 16 M8 20 L14 22" stroke-width="2.6"/>
-    <path d="M10 40 Q32 31 54 40" stroke-width="3"/>
-    <circle cx="32" cy="27" r="12" stroke-width="3.6" style="fill:#fbfbf8"/>
+    <path d="M10 40 Q32 31 54 40" stroke-width="3" style="stroke:#d9581a"/>
+    <circle cx="32" cy="27" r="12" stroke-width="3.6" style="fill:#f0883e"/>
     <path d="M20.5 27 H43.5 M32 15 V39 M24 18.5 Q29.5 27 24 35.5 M40 18.5 Q34.5 27 40 35.5" stroke-width="1.8"/>
     <path d="M36 37.5 L42.5 31 M31 38.8 L43.8 26 M40.5 24.5 L43.6 21.4" stroke-width="1.4" opacity=".7"/>
     <path d="M12 43 L19 58 M22 45.5 L25 59 M32 46 L32 60 M42 45.5 L39 59 M52 43 L45 58 M19 58 Q32 62.5 45 58" stroke-width="2"/>
-    <path d="M10 40 Q32 51 54 40" stroke-width="4.4"/>
+    <path d="M10 40 Q32 51 54 40" stroke-width="4.4" style="stroke:#d9581a"/>
   </g></svg>

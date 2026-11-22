@@ -5,12 +5,16 @@ export interface Colors {
   ink: string;
   mute: string;
   faint: string;
+  /** Basketball orange: the rim's colour. */
+  accent: string;
+  /** The ball's fill. */
+  ball: string;
 }
 
 export function readColors(): Colors {
   const s = getComputedStyle(document.documentElement);
   const v = (n: string) => s.getPropertyValue(n).trim();
-  return { paper: v('--paper'), ink: v('--ink'), mute: v('--mute'), faint: v('--faint') };
+  return { paper: v('--paper'), ink: v('--ink'), mute: v('--mute'), faint: v('--faint'), accent: v('--accent') || '#d9581a', ball: v('--ball') || '#f0883e' };
 }
 
 type P = { x: number; y: number };
@@ -81,17 +85,17 @@ export class Pen {
     c.translate(x, y);
     if (sq) { c.translate(0, R * sq * 0.35); c.scale(1 + 0.4 * sq, 1 - 0.4 * sq); }
     c.rotate(rot);
-    c.fillStyle = this.c.paper; c.strokeStyle = this.c.ink; c.lineWidth = 2.5;
+    c.fillStyle = this.c.ball; c.strokeStyle = this.c.ink; c.lineWidth = 2.5;
     c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill();
     // Shading: hatch the whole ball, then lay paper back over the lit side (upper left),
-    // leaving a hatched crescent on the lower right. Done before rotating, so the light stays put.
+    // leaving a hatched crescent on the lower right. The ball is the one orange thing besides the rim. Done before rotating, so the light stays put.
     c.save();
     c.rotate(-rot);
     c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.clip();
     c.lineWidth = 0.8; c.globalAlpha = 0.7; c.beginPath();
     for (let k = -2 * R; k <= 2 * R; k += 3.4) { c.moveTo(k - R, -R); c.lineTo(k + R, R); }
     c.stroke();
-    c.globalAlpha = 1; c.fillStyle = this.c.paper;
+    c.globalAlpha = 1; c.fillStyle = this.c.ball;
     c.beginPath(); c.arc(-R * 0.34, -R * 0.36, R * 1.02, 0, Math.PI * 2); c.fill();
     c.restore();
     c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.stroke();

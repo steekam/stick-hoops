@@ -134,7 +134,7 @@ export class Renderer {
 
   private court(): HTMLCanvasElement {
     const { canvas, pen } = this, c = pen.c;
-    const key = `${canvas.width}x${canvas.height}|${c.paper}|${c.ink}|${c.mute}|${c.faint}`;
+    const key = `${canvas.width}x${canvas.height}|${c.paper}|${c.ink}|${c.mute}|${c.faint}|${c.accent}`;
     if (this.bg && key === this.bgKey) return this.bg;
     const bg = this.bg ?? document.createElement('canvas');
     bg.width = canvas.width; bg.height = canvas.height;
@@ -302,14 +302,15 @@ export class Renderer {
     const { r, cx } = this.rimRing(h);
     this.netStrands(g, h, false);
     ctx.lineWidth = 2.4; ctx.strokeStyle = c.ink;
-    path(ctx, flatCircle(cx, y, 0, r, 0, Math.PI, 18)); ctx.stroke();
     path(ctx, [{ x: h.back.x, y }, { x: bx, y }]); ctx.stroke();
+    ctx.strokeStyle = c.accent; // the rim is the one orange line on the court
+    path(ctx, flatCircle(cx, y, 0, r, 0, Math.PI, 18)); ctx.stroke();
   }
 
   private drawHoopFront(g: Game, h: ReturnType<typeof hoopGeom>): void {
     const { ctx, pen } = this, { r, cx } = this.rimRing(h);
     this.netStrands(g, h, true);
-    ctx.strokeStyle = pen.c.ink; ctx.lineWidth = 3.4;
+    ctx.strokeStyle = pen.c.accent; ctx.lineWidth = 3.4;
     path(ctx, flatCircle(cx, h.y, 0, r, Math.PI, Math.PI * 2, 18)); ctx.stroke();
   }
 
