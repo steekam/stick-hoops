@@ -8,7 +8,7 @@ import { Pen } from './pen';
 
 // Black is for what you play with (figure, ball, hoop, wall); grey is scenery.
 
-interface Pop { x: number; y: number; t: number; txt: string }
+interface Pop { x: number; y: number; t: number; txt: string; align: CanvasTextAlign }
 type Mood = 'idle' | 'cheer' | 'ooh';
 
 export class Renderer {
@@ -40,7 +40,12 @@ export class Renderer {
     return { x: ((clientX - r.left) / r.width) * W, y: ((clientY - r.top) / r.height) * H };
   }
 
-  pop(txt: string, x: number, y: number): void { this.pops.push({ x, y, t: 0, txt }); }
+  /** Floating text. Default alignment is centred; 'right' anchors the text's right edge at x. */
+  pop(txt: string, x: number, y: number, align: CanvasTextAlign = 'center'): void {
+    // Keep pops from stacking: nudge a new one up if another started in the last half second.
+    const recent = this.pops.filter((p) => p.t < 0.5).length;
+    this.pops.push({ x, y: y - recent * 26, t: 0, txt, align });
+  }
   clearPops(): void { this.pops = []; }
   netSwing(): void { this.net = 1; }
   crowdMood(m: Mood): void { this.crowd.mood = m; this.crowd.t = 0; }
@@ -98,8 +103,8 @@ export class Renderer {
     for (const p of this.pops) {
       ctx.globalAlpha = 1 - p.t / 1.2;
       ctx.fillStyle = pen.c.ink; ctx.font = '22px "Rubik Mono One", ui-monospace, monospace';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-      ctx.fillText(p.txt, p.x, p.y - p.t * 50);
+      ctx.textAlign = p.align; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(p.txt, Math.max(8, p.x), p.y - p.t * 50);
       ctx.textAlign = 'left';
     }
     ctx.globalAlpha = 1;

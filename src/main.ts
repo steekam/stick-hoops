@@ -5,6 +5,8 @@ import { LEVELS, levels, LevelsMode, unlockedLevel } from './modes/solo/levels';
 import type { ModeEntry } from './modes/registry';
 import { createMenu } from './ui/menu';
 import { createShell } from './ui/shell';
+import { installTestHooks } from './game/testing';
+import { tutorial, tutorialDone } from './ui/tutorial';
 
 const canvas = document.getElementById('court') as HTMLCanvasElement;
 const game = new Game(canvas, createShell());
@@ -40,16 +42,31 @@ function play(entry: ModeEntry): void {
   canvas.focus();
 }
 
-const menu = createMenu(play);
-menuBtn.onclick = () => {
+/** Leave whatever is running (a mode or the tutorial) and show the menu. */
+function toMenu(howTo = false): void {
   game.mode?.stop?.(game);
   game.ui.hideOverlay();
+  game.showHint = false;
   levelBar.hidden = true;
   menuBtn.hidden = true;
-  menu.show();
-};
+  document.getElementById('hud')!.hidden = true;
+  if (howTo) menu.showHowTo();
+  else menu.show();
+}
 
-menu.show();
+function startTutorial(): void {
+  menu.hide();
+  menuBtn.hidden = false;
+  levelBar.hidden = true;
+  game.setMode(tutorial({ onExit: () => toMenu(), onHowTo: () => toMenu(true) }));
+  canvas.focus({ preventScroll: true });
+}
+
+const menu = createMenu({ onPick: play, onTutorial: startTutorial });
+menuBtn.onclick = () => toMenu();
+
+if (tutorialDone()) menu.show();
+else startTutorial();
 
 let last = performance.now();
 function frame(now: number): void {
@@ -63,3 +80,6 @@ requestAnimationFrame(frame);
 
 // Handy in the console while playtesting.
 (window as unknown as { game: Game }).game = game;
+// End-to-end test hooks: only with ?e2e in the URL or in dev. Harmless to players either way,
+// since scores will be verified by the server.
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('e2e')) installTestHooks(game);

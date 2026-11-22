@@ -103,8 +103,10 @@ export class Game {
     this.ui.showOverlay(title, body, buttons);
   }
 
+  /** Floating text. By default it ends just left of the backboard so long labels never cross it. */
   pop(text: string, x?: number, y?: number): void {
-    this.renderer.pop(text, x ?? this.renderer.hoopPos.x + 25, y ?? this.renderer.hoopPos.y - 30);
+    if (x == null) this.renderer.pop(text, this.renderer.hoopPos.x + 46, y ?? this.renderer.hoopPos.y - 30, 'right');
+    else this.renderer.pop(text, x, y ?? this.renderer.hoopPos.y - 30);
   }
 
   refreshHud(force = false): void {

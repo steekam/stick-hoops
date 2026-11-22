@@ -2,6 +2,7 @@ import { sfx } from '../../audio/sfx';
 import { FLOOR } from '../../sim/constants';
 import { between } from '../../sim/rng';
 import { store } from '../../storage';
+import { recordRound, recordShot } from '../../stats';
 import type { Game } from '../../game/game';
 import type { Mode } from '../../game/types';
 
@@ -49,6 +50,7 @@ export function levels(startAt = unlockedLevel(), onLevelChange?: (i: number) =>
     g.world.wall = L.wall ? { x: L.wall.x, w: 16, h: L.wall.h } : null;
     g.world.wind = L.wind ?? (L.gust ? between(g.rng, -L.gust, L.gust) : 0);
     g.placePlayer(L.px, true);
+    recordRound('levels', { level: i + 1 });
     onLevelChange?.(i);
     g.refreshHud(true);
   }
@@ -61,12 +63,14 @@ export function levels(startAt = unlockedLevel(), onLevelChange?: (i: number) =>
     aimDots: () => (level < 3 ? 20 : 8),
     onLaunch() { left--; },
     onShotEnd(g, r) {
+      recordShot('levels', r);
       const L = LEVELS[level];
       if (r.made) made++;
       if (L.gust) g.world.wind = between(g.rng, -L.gust, L.gust);
       if (made >= L.need) {
         const n = level + 1;
         if (n > unlockedLevel() && n < LEVELS.length) store.set('unlocked', n);
+        recordRound('levels', { level: Math.min(n + 1, LEVELS.length) });
         const used = L.balls - left;
         sfx.clear();
         if (n >= LEVELS.length) {

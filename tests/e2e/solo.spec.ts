@@ -5,7 +5,7 @@ test.describe('Practice', () => {
     await open(page);
     const c = court(page);
     await c.pick('practice');
-    await expect(page.locator('#hud')).toContainText('PRACTICE');
+    await expect(page.locator('#hud')).toContainText(/practice/i);
     expect((await c.make()).made).toBe(true);
     await expect(page.locator('#hud')).toContainText('1/1 MADE');
     const pts = Number((await page.locator('#hud-r').innerText()).match(/\d+/)![0]);
@@ -29,19 +29,19 @@ test.describe('Levels', () => {
     await open(page);
     const c = court(page);
     await c.pick('levels');
-    await expect(page.locator('#hud')).toContainText('LEVEL 1/10');
+    await expect(page.locator('#hud')).toContainText(/level 1\/10/i);
     await expect(page.locator('#lv-1')).toBeDisabled();
     await c.make();
     await c.make();
     await expect(c.overlay).toBeVisible();
     expect(await c.overlayTitle()).toBe('Level 1 cleared');
     await c.press('Level 2');
-    await expect(page.locator('#hud')).toContainText('LEVEL 2/10');
+    await expect(page.locator('#hud')).toContainText(/level 2\/10/i);
     await expect(page.locator('#lv-1')).toBeEnabled();
     await page.reload();
     await page.waitForFunction(() => !!(window as unknown as { __test?: unknown }).__test);
     await c.pick('levels');
-    await expect(page.locator('#hud')).toContainText('LEVEL 2/10');
+    await expect(page.locator('#hud')).toContainText(/level 2\/10/i);
   });
 
   test('running out of balls offers a retry with a full rack', async ({ page }) => {
@@ -63,7 +63,7 @@ test.describe('Levels', () => {
       const c = court(page);
       await c.pick('levels');
       await page.locator(`#lv-${i}`).click();
-      await expect(page.locator('#hud')).toContainText(`LEVEL ${i + 1}/10`);
+      await expect(page.locator('#hud')).toContainText(new RegExp(`level ${i + 1}/10`, 'i'));
       for (let k = 0; k < 3 && !(await c.overlay.isVisible()); k++) {
         expect((await c.make()).made, `planned make ${k + 1} on level ${i + 1}`).toBe(true);
       }

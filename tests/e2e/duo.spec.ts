@@ -62,7 +62,8 @@ test.describe('HORSE', () => {
     const a = (await c.state()).px;
     await c.press('New spot');
     await expect(c.overlay).toBeVisible();
-    expect((await c.state()).px).not.toBe(a);
+    await c.settle(); // he walks to the new spot rather than teleporting
+    expect(Math.abs((await c.state()).px - a)).toBeGreaterThanOrEqual(59);
     await expect(page.locator('#ov-btns button', { hasText: 'New spot' })).toHaveCount(0);
   });
 });
@@ -78,8 +79,8 @@ test.describe('Sabotage', () => {
       const title = await c.overlayTitle();
       if (title.includes('wins')) break;
       if (title.includes('power-up')) {
-        await c.press('Tight rim');
-        armed = true;
+        if (armed) await c.press('Save it');
+        else { await c.press('Tight rim'); armed = true; }
         continue;
       }
       await c.press('Ready');
