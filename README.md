@@ -35,10 +35,12 @@ The golden snapshot in `tests/` pins a known shot. If it changes, stored replays
 
 ```
 npm test           # unit: physics determinism, golden shot, scoring, HORSE/Sabotage rules
-npm run test:e2e   # browser: every mode played end to end on the production build
+npm run test:e2e   # browser: every mode played end to end on the production build (e2e by TesterArmy)
 ```
 
-The end-to-end tests load the game with `?e2e`, which installs `window.__test` (see `src/game/testing.ts`).
+The end-to-end tests use [e2e](https://github.com/e2e-inc/e2e) (they moved from Playwright; see
+[BENCHMARK.md](BENCHMARK.md) for the timing comparison). First run: `npx @e2e-dev/web install chromium`.
+They load the game with `?e2e`, which installs `window.__test` (see `src/game/testing.ts`).
 Instead of guessing drag gestures, a test asks the simulation for a launch that scores from where the
 shooter stands, then fires it through the real `Game.shoot`. Because the live loop and `simulateShot`
 share the same stepping code, a planned make that misses live is a real bug.
@@ -55,6 +57,6 @@ What they cover:
 - Sabotage: a full match where a power-up hits only the next opposing shot; ties go to sudden death.
 - Determinism: 500 shots across walls, wind, tight rims and moving hoops give identical results in
   the browser and in Node, which is what the server will use to verify scores.
-- Layout on a phone (no sideways scrolling, overlay buttons on screen) and the dark theme.
+- Layout at phone size (no sideways scrolling, overlay buttons on screen) and the dark theme.
 
 CI runs both suites on every push.

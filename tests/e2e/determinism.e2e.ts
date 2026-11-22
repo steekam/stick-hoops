@@ -2,12 +2,10 @@ import { makeRng } from '../../src/sim/rng';
 import { makeLaunch, simulateShot } from '../../src/sim/shot';
 import { makeWorld } from '../../src/sim/world';
 import { FLOOR } from '../../src/sim/constants';
-import { expect, open, test } from './fixtures';
+import { evaluate, expect, open, test } from './fixtures';
 
-// The server will re-run shots in Node (or a Worker). The browser and Node must agree exactly,
-// on every shot, including moving hoops, walls and wind.
-test('browser and Node simulate 500 shots identically', async ({ page }) => {
-  await open(page);
+test('browser and Node simulate 500 shots identically', async ({ browser }) => {
+  await open(browser);
   const worlds = [
     makeWorld(),
     makeWorld({ wind: -170 }),
@@ -21,11 +19,12 @@ test('browser and Node simulate 500 shots identically', async ({ page }) => {
     l: makeLaunch(Math.floor(rng() * 20000), 180 + rng() * 420, 250 + rng() * 700, -250 - rng() * 700),
   }));
   const node = cases.map((c) => simulateShot(c.w, c.l));
-  const browser = await page.evaluate(
-    (cs) => cs.map((c) => (window as unknown as { __test: { simulate: (w: unknown, l: unknown) => unknown } }).__test.simulate(c.w, c.l)),
+  const inBrowser = await evaluate<unknown[]>(
+    browser,
+    (cs: { w: unknown; l: unknown }[]) => cs.map((c) => (window as unknown as { __test: { simulate: (w: unknown, l: unknown) => unknown } }).__test.simulate(c.w, c.l)),
     cases,
   );
-  expect(browser).toEqual(node);
+  expect(inBrowser).toEqual(node);
   expect(node.some((r) => r.made)).toBe(true);
   expect(node.some((r) => !r.made)).toBe(true);
 });

@@ -15,10 +15,10 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npx playwright install --with-deps chromium
+      - run: npx @e2e-dev/web install chromium --with-deps
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-traces
-          path: test-results/
+          path: .e2e/results/
