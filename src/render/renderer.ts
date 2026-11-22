@@ -134,7 +134,7 @@ export class Renderer {
 
   private court(): HTMLCanvasElement {
     const { canvas, pen } = this, c = pen.c;
-    const key = `${canvas.width}x${canvas.height}|${c.paper}|${c.ink}|${c.mute}|${c.faint}|${c.accent}`;
+    const key = `${canvas.width}x${canvas.height}|${c.paper}|${c.ink}|${c.mute}|${c.faint}|${c.accent}|${c.wood}|${c.paint}`;
     if (this.bg && key === this.bgKey) return this.bg;
     const bg = this.bg ?? document.createElement('canvas');
     bg.width = canvas.width; bg.height = canvas.height;
@@ -157,7 +157,7 @@ export class Renderer {
     const A = proj(-260, FLOOR, Z_FRONT), B = proj(W + 120, FLOOR, Z_FRONT);
     const C = proj(W + 120, FLOOR, Z_BACK), D = proj(-260, FLOOR, Z_BACK);
     path(x, [A, B, C, D], true);
-    x.fillStyle = c.paper; x.fill();
+    x.fillStyle = c.wood; x.fill(); // hardwood
     // Floor shading: light hatching everywhere, a second pass darkening toward the back.
     x.strokeStyle = c.mute; x.lineWidth = 0.7; x.globalAlpha = 0.22;
     path(x, [A, B, C, D], true); hatch(x, box([A, B, C, D]), 11, -0.42);
@@ -184,7 +184,7 @@ export class Renderer {
     path(x, [D, C]); x.stroke();
     const A2 = { x: A.x, y: A.y + 10 }, B2 = { x: B.x, y: B.y + 10 };
     path(x, [A, B, B2, A2], true);
-    x.fillStyle = c.paper; x.fill();
+    x.fillStyle = c.wood; x.fill();
     x.strokeStyle = c.ink; x.lineWidth = 1; x.globalAlpha = 0.55;
     path(x, [A, B, B2, A2], true); hatch(x, box([A, B, B2, A2]), 4, Math.PI / 4);
     x.globalAlpha = 1; x.lineWidth = 2.4;
@@ -192,7 +192,7 @@ export class Renderer {
     path(x, [A2, B2]); x.stroke();
 
     // Court markings: a real half court seen from the sideline (see court.ts).
-    drawCourtLines(x, c.ink, c.mute, Z_FRONT);
+    drawCourtLines(x, c.ink, c.mute, Z_FRONT, c.paint);
 
     this.bg = bg;
     this.bgKey = key;

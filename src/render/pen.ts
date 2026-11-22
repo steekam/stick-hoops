@@ -9,12 +9,16 @@ export interface Colors {
   accent: string;
   /** The ball's fill. */
   ball: string;
+  /** Hardwood floor tint. */
+  wood: string;
+  /** The painted lane. */
+  paint: string;
 }
 
 export function readColors(): Colors {
   const s = getComputedStyle(document.documentElement);
   const v = (n: string) => s.getPropertyValue(n).trim();
-  return { paper: v('--paper'), ink: v('--ink'), mute: v('--mute'), faint: v('--faint'), accent: v('--accent') || '#d9581a', ball: v('--ball') || '#f0883e' };
+  return { paper: v('--paper'), ink: v('--ink'), mute: v('--mute'), faint: v('--faint'), accent: v('--accent') || '#d9581a', ball: v('--ball') || '#f0883e', wood: v('--wood') || '#f1e2c6', paint: v('--paint') || '#b9cde3' };
 }
 
 type P = { x: number; y: number };

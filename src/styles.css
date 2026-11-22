@@ -1,15 +1,18 @@
 /* Ink on paper; the dark theme flips to chalk on slate. Every colour is a token.
-   One accent, basketball orange, used only on the ball and the rim (and the logo's ball). */
+   Colour is used sparingly: orange on the ball and rim (and the logo), hardwood on the floor,
+   and a muted blue in the paint. Everything else is pencil. */
 :root {
   --paper: #fbfbf8; --ink: #121211; --mute: #6c6c66; --faint: #dcdcd5;
   --accent: #d9581a; --ball: #f0883e;
+  /* Court colours: hardwood and a muted blue paint. */
+  --wood: #f1e2c6; --paint: #b9cde3;
   --display: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --paper: #0e0e0d; --ink: #f3f3ee; --mute: #8e8e87; --faint: #2b2b28; --accent: #ff7d3a; --ball: #e2722c; color-scheme: dark; }
+  :root:not([data-theme="light"]) { --paper: #0e0e0d; --ink: #f3f3ee; --mute: #8e8e87; --faint: #2b2b28; --accent: #ff7d3a; --ball: #e2722c; --wood: #2b2319; --paint: #1d2b3c; color-scheme: dark; }
 }
-:root[data-theme="dark"] { --paper: #0e0e0d; --ink: #f3f3ee; --mute: #8e8e87; --faint: #2b2b28; --accent: #ff7d3a; --ball: #e2722c; color-scheme: dark; }
+:root[data-theme="dark"] { --paper: #0e0e0d; --ink: #f3f3ee; --mute: #8e8e87; --faint: #2b2b28; --accent: #ff7d3a; --ball: #e2722c; --wood: #2b2319; --paint: #1d2b3c; color-scheme: dark; }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
 body { background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 14px; }

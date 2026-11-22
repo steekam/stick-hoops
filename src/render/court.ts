@@ -43,13 +43,14 @@ const on = (x: number, z: number): P => proj(x, FLOOR, z);
  * Draw the markings into a context already set to world units.
  * zFront is the nearest visible depth, so lines that run toward the viewer stop at the edge.
  */
-export function drawCourtLines(ctx: CanvasRenderingContext2D, ink: string, mute: string, zFront: number): void {
+export function drawCourtLines(ctx: CanvasRenderingContext2D, ink: string, mute: string, zFront: number, paintFill?: string): void {
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // The paint, shaded with light hatching like a pencil-filled area.
+  // The paint: filled with its colour, then shaded with light hatching like a pencil-filled area.
   const paint = [on(FT_LINE_X, -LANE_HALF), on(BASELINE_X, -LANE_HALF), on(BASELINE_X, LANE_HALF), on(FT_LINE_X, LANE_HALF)];
+  if (paintFill) { path(ctx, paint, true); ctx.fillStyle = paintFill; ctx.fill(); }
   ctx.strokeStyle = mute; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.35;
   path(ctx, paint, true);
   const xs = paint.map((p) => p.x), ys = paint.map((p) => p.y);
