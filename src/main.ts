@@ -7,6 +7,7 @@ import { createMenu } from './ui/menu';
 import { createShell } from './ui/shell';
 import { MARK } from './ui/brand';
 import { icon } from './ui/icons';
+import { createLook } from './ui/look';
 import { tutorial, tutorialDone } from './ui/tutorial';
 
 document.querySelector('.brand-mark')!.innerHTML = MARK;
@@ -17,6 +18,7 @@ const game = new Game(canvas, createShell());
 attachInput(game);
 
 const levelBar = document.getElementById('levels')!;
+
 const menuBtn = document.getElementById('btn-menu') as HTMLButtonElement;
 
 /** Level picker shown above the court in Levels mode. */
@@ -71,6 +73,10 @@ menuBtn.onclick = () => toMenu();
 
 if (tutorialDone()) menu.show();
 else startTutorial();
+
+// Look picker: previews of every backdrop. Shooting pauses while it's open.
+const look = createLook(game.renderer, (open) => { game.inputEnabled = !open; if (!open) canvas.focus(); });
+(document.getElementById('btn-look') as HTMLButtonElement).onclick = () => (look.isOpen ? look.close() : look.open());
 
 let last = performance.now();
 function frame(now: number): void {

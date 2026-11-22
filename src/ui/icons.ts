@@ -10,6 +10,7 @@ const PATHS: Record<string, string> = {
   horse: '<rect x="2.8" y="6.5" width="8.4" height="11" rx=".6"/><rect x="12.8" y="6.5" width="8.4" height="11" rx=".6"/><path d="M5.3 9.5v5M8.7 9.5v5M5.3 12h3.4"/><circle cx="17" cy="12" r="2.4"/>',
   sabotage: '<path d="M13.4 2.5 5.2 13.4h6.1l-1.2 8.1 8.4-11.6h-6.1l1-7.4z"/>',
   // controls
+  look: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16.5" cy="9" r="1.6"/>',
   menu: '<path d="M4 7.2h16M4 12h16M4 16.8h16"/>',
   sound: '<path d="M4 9.2h3.8L13 5v14l-5.2-4.2H4z"/><path d="M16.2 9.2a4 4 0 0 1 0 5.6M18.8 6.6a7.6 7.6 0 0 1 0 10.8"/>',
   mute: '<path d="M4 9.2h3.8L13 5v14l-5.2-4.2H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>',
