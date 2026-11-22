@@ -1,0 +1,82 @@
+// Drawing helpers shared by the renderer: theme colours, the ink "boil" wobble, limbs.
+
+export interface Colors {
+  paper: string;
+  ink: string;
+  mute: string;
+  faint: string;
+}
+
+export function readColors(): Colors {
+  const s = getComputedStyle(document.documentElement);
+  const v = (n: string) => s.getPropertyValue(n).trim();
+  return { paper: v('--paper'), ink: v('--ink'), mute: v('--mute'), faint: v('--faint') };
+}
+
+type P = { x: number; y: number };
+
+export class Pen {
+  c: Colors;
+  /** Hand-drawn wobble; only the figure uses it so the rest of the court stays still. */
+  boil = false;
+  private seed = 0;
+  private n = 0;
+  private readonly reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  constructor(readonly ctx: CanvasRenderingContext2D) {
+    this.c = readColors();
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => (this.c = readColors()));
+    new MutationObserver(() => (this.c = readColors())).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+  }
+
+  /** Call once per frame: the wobble changes ~7 times a second, like a flipbook. */
+  frame(time: number): void {
+    this.seed = Math.floor(time * 7);
+    this.n = 0;
+  }
+
+  jit(): number {
+    if (this.reduced || !this.boil) return 0;
+    this.n++;
+    const s = Math.sin(this.seed * 131.1 + this.n * 17.37) * 43758.5453;
+    return (s - Math.floor(s) - 0.5) * 1.1;
+  }
+
+  seg(a: P, b: P): void {
+    const c = this.ctx;
+    c.beginPath();
+    c.moveTo(a.x + this.jit(), a.y + this.jit());
+    c.lineTo(b.x + this.jit(), b.y + this.jit());
+    c.stroke();
+  }
+
+  /** Two-bone limb from A toward T. `sign` picks which way the joint bends. */
+  limb(A: P, T: P, sign: number, l = 22): void {
+    const dx = T.x - A.x, dy = T.y - A.y;
+    const d = Math.max(0.01, Math.min(Math.hypot(dx, dy), 2 * l - 0.01));
+    const a = Math.atan2(dy, dx);
+    const c = Math.acos(Math.max(-1, Math.min(1, d / (2 * l))));
+    const E = { x: A.x + Math.cos(a + sign * c) * l, y: A.y + Math.sin(a + sign * c) * l };
+    const Tn = { x: A.x + Math.cos(a) * d, y: A.y + Math.sin(a) * d };
+    this.seg(A, E);
+    this.seg(E, Tn);
+  }
+
+  ball(x: number, y: number, rot: number, sq: number, R: number): void {
+    const c = this.ctx;
+    c.save();
+    c.translate(x, y);
+    if (sq) { c.translate(0, R * sq * 0.35); c.scale(1 + 0.4 * sq, 1 - 0.4 * sq); }
+    c.rotate(rot);
+    c.fillStyle = this.c.paper; c.strokeStyle = this.c.ink; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(-R, 0); c.lineTo(R, 0); c.moveTo(0, -R); c.lineTo(0, R); c.stroke();
+    c.beginPath(); c.arc(-R * 1.15, 0, R * 0.75, -1, 1); c.stroke();
+    c.beginPath(); c.arc(R * 1.15, 0, R * 0.75, Math.PI - 1, Math.PI + 1); c.stroke();
+    c.restore();
+  }
+}

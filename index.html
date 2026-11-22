@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Stick Hoops</title>
+    <meta name="claude:viewport-fit-sides" content="cover" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=IBM+Plex+Mono:wght@400;600&display=swap" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>Stick Hoops</h1>
+        <div class="hdr-r">
+          <button id="btn-menu" class="chip" hidden>Menu</button>
+          <button id="btn-sound" class="chip" aria-pressed="true">Sound on</button>
+        </div>
+      </header>
+      <div id="levels" class="levels" hidden></div>
+      <div class="hud" id="hud" hidden><div id="hud-l"></div><div id="hud-m"></div><div id="hud-r"></div></div>
+      <div class="court">
+        <canvas id="court" tabindex="0" aria-label="Basketball court. Press, pull back and release to shoot, or use the arrow keys and space."></canvas>
+        <div class="overlay" id="overlay" hidden>
+          <div class="card"><h2 id="ov-title"></h2><p id="ov-body"></p><div class="btns" id="ov-btns"></div></div>
+        </div>
+        <div class="screen" id="menu" hidden></div>
+      </div>
+      <p class="help" id="help">Press anywhere on the court, pull back away from the hoop and let go. A longer pull shoots harder. Keys: ←→ angle, ↑↓ power, space to shoot.</p>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
