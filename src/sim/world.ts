@@ -55,6 +55,7 @@ export function hoopGeom(w: World, tick: number) {
     boardX: x + 58,
     boardTop: y - 84,
     boardBottom: y + 14,
-    poleX: x + 88,
+    // The stanchion stands behind the baseline, off the court, as on a real hoop.
+    poleX: x + 110,
   };
 }

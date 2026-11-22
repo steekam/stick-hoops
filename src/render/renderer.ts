@@ -6,6 +6,7 @@ import type { Game } from '../game/game';
 import { drawFigure } from './figure';
 import { flatCircle, hatch, path, proj, Z_BACK, Z_FRONT } from './iso';
 import { Pen } from './pen';
+import { drawCourtLines } from './court';
 
 const FONT = 'ui-monospace, Menlo, Consolas, monospace';
 
@@ -160,14 +161,14 @@ export class Renderer {
     // Floor shading: light hatching everywhere, a second pass darkening toward the back.
     x.strokeStyle = c.mute; x.lineWidth = 0.7; x.globalAlpha = 0.22;
     path(x, [A, B, C, D], true); hatch(x, box([A, B, C, D]), 11, -0.42);
-    const M1 = proj(-260, FLOOR, Z_BACK - 90), M2 = proj(W + 120, FLOOR, Z_BACK - 90);
+    const M1 = proj(-260, FLOOR, Z_BACK - 120), M2 = proj(W + 120, FLOOR, Z_BACK - 120);
     x.globalAlpha = 0.18;
     path(x, [M1, M2, C, D], true); hatch(x, box([M1, M2, C, D]), 6, 0.9);
     x.globalAlpha = 1;
     // Boards running across the court, fainter as they recede.
     x.strokeStyle = c.mute; x.lineWidth = 1;
-    [-18, 18, 58, 104, 156, 214].forEach((z, i) => {
-      x.globalAlpha = 0.34 - i * 0.045;
+    [-80, -36, 8, 56, 108, 164, 224].forEach((z, i) => {
+      x.globalAlpha = 0.32 - i * 0.035;
       path(x, [proj(-260, FLOOR, z), proj(W + 120, FLOOR, z)]); x.stroke();
     });
     x.globalAlpha = 1;
@@ -181,7 +182,7 @@ export class Renderer {
     // Back edge and the slab's front face.
     x.strokeStyle = c.mute; x.lineWidth = 1.6;
     path(x, [D, C]); x.stroke();
-    const A2 = { x: A.x, y: A.y + 16 }, B2 = { x: B.x, y: B.y + 16 };
+    const A2 = { x: A.x, y: A.y + 10 }, B2 = { x: B.x, y: B.y + 10 };
     path(x, [A, B, B2, A2], true);
     x.fillStyle = c.paper; x.fill();
     x.strokeStyle = c.ink; x.lineWidth = 1; x.globalAlpha = 0.55;
@@ -190,21 +191,8 @@ export class Renderer {
     path(x, [A, B]); x.stroke();
     path(x, [A2, B2]); x.stroke();
 
-    // Court markings, in grey: baseline under the hoop, the lane, the free-throw circle, the arc.
-    const base = 878, lane = 690;
-    x.strokeStyle = c.mute; x.lineWidth = 1.6; x.globalAlpha = 0.8;
-    path(x, [proj(base, FLOOR, Z_FRONT), proj(base, FLOOR, Z_BACK)]); x.stroke();
-    path(x, [proj(lane, FLOOR, -34), proj(base, FLOOR, -34), proj(base, FLOOR, 34), proj(lane, FLOOR, 34)], true); x.stroke();
-    path(x, flatCircle(lane, FLOOR, 0, 34, Math.PI / 2, (3 * Math.PI) / 2, 20)); x.stroke();
-    // Three-point arc: points of a big circle round the rim, kept to the visible floor.
-    const arc = [];
-    for (let i = 0; i <= 60; i++) {
-      const t = Math.PI / 2 + (Math.PI * i) / 60, r = 505;
-      const ax = 800 + Math.cos(t) * r, az = Math.sin(t) * r;
-      if (az >= Z_FRONT + 2 && az <= Z_BACK) arc.push(proj(ax, FLOOR, az));
-    }
-    if (arc.length > 1) { x.setLineDash([7, 6]); path(x, arc); x.stroke(); x.setLineDash([]); }
-    x.globalAlpha = 1;
+    // Court markings: a real half court seen from the sideline (see court.ts).
+    drawCourtLines(x, c.ink, c.mute, Z_FRONT);
 
     this.bg = bg;
     this.bgKey = key;

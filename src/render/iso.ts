@@ -8,9 +8,9 @@ export const KY = -0.36;
 /** World point (x, y) at depth z → screen point in world units. */
 export const proj = (x: number, y: number, z: number) => ({ x: x + z * KX, y: y + z * KY });
 
-/** Depth range of the visible floor: a strip in front of the players and a stretch behind. */
-export const Z_FRONT = -42;
-export const Z_BACK = 270;
+/** Depth range of the visible floor: from the bottom of the screen to an apron past the far sideline. */
+export const Z_FRONT = -110;
+export const Z_BACK = 310;
 
 type P = { x: number; y: number };
 
