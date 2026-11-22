@@ -7,5 +7,5 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 export default defineConfig(({ mode }) => ({
   plugins: mode === 'preview' ? [viteSingleFile()] : [],
   build: { outDir: mode === 'preview' ? 'dist-preview' : 'dist' },
-  test: { globals: true, environment: 'node' },
+  test: { globals: true, environment: 'node', include: ['tests/*.test.ts'] },
 }));
