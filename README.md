@@ -71,3 +71,14 @@ still the 2D plane at z = 0, so replays are unaffected.
 Brand files live in `public/brand/`: `logo.svg` (mark and wordmark; the mark is the ball dropping through the ring), `mark.svg`, `mark-dark.svg`,
 and `public/favicon.svg`. The in-game versions and the icon set are in `src/ui/brand.ts` and
 `src/ui/icons.ts`, drawn in `currentColor` so they follow the light and dark themes.
+
+## Feedback
+
+Players can report a bug, suggest a level or mode, or send feedback from the game (the Feedback
+button in the header, or "Suggest a level or mode" on the menu). Reports become labelled GitHub
+issues (`bug`, `idea`, `feedback`, plus `from-game`) through a free Cloudflare Worker in
+`worker/feedback/`, so players don't need an account. Bug reports can carry the mode, backdrop,
+screen size, browser and recent errors; the player can untick that.
+
+Until the Worker is deployed (see `worker/feedback/README.md`, about 10 minutes, $0), or if it's
+down, the form offers a prefilled GitHub issue instead.

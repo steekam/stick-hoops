@@ -8,7 +8,8 @@
     "noUnusedLocals": false,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src", "tests", "vite.config.ts"]
+  "include": ["src", "tests", "worker", "vite.config.ts"]
 }

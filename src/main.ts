@@ -8,6 +8,8 @@ import { createShell } from './ui/shell';
 import { MARK } from './ui/brand';
 import { icon } from './ui/icons';
 import { createLook } from './ui/look';
+import { createFeedback } from './ui/feedback';
+import { settings } from './settings';
 import { tutorial, tutorialDone } from './ui/tutorial';
 
 document.querySelector('.brand-mark')!.innerHTML = MARK;
@@ -77,6 +79,25 @@ else startTutorial();
 // Look picker: previews of every backdrop. Shooting pauses while it's open.
 const look = createLook(game.renderer, (open) => { game.inputEnabled = !open; if (!open) canvas.focus(); });
 (document.getElementById('btn-look') as HTMLButtonElement).onclick = () => (look.isOpen ? look.close() : look.open());
+
+// Feedback: bug reports, level or mode ideas, general feedback. Filed as GitHub issues.
+const feedback = createFeedback(
+  () => {
+    const hud = game.mode && !menu.open ? game.mode.hud(game) : null;
+    return {
+      version: __APP_VERSION__,
+      mode: menu.open ? null : game.mode?.id ?? null,
+      hud: hud ? [hud.left, hud.mid, hud.right].filter(Boolean).join(' | ') : '',
+      backdrop: settings().backdrop,
+      scoreboard: settings().scoreboard,
+      viewport: `${innerWidth}x${innerHeight}`,
+      userAgent: navigator.userAgent,
+    };
+  },
+  (open) => { game.inputEnabled = !open; if (!open && !menu.open) canvas.focus(); },
+);
+(document.getElementById('btn-feedback') as HTMLButtonElement).onclick = () => (feedback.isOpen ? feedback.close() : feedback.open());
+(window as unknown as { openFeedback: typeof feedback.open }).openFeedback = feedback.open;
 
 let last = performance.now();
 function frame(now: number): void {

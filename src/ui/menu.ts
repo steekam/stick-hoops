@@ -102,7 +102,12 @@ export function createMenu(hooks: MenuHooks): MenuApi {
     tut.id = 'btn-tutorial';
     tut.type = 'button';
     tut.onclick = () => { sfx.click(); hooks.onTutorial(); };
-    foot.append(how, tut);
+    const idea = el('button', 'btn secondary', 'Suggest a level or mode');
+    idea.id = 'btn-idea';
+    idea.type = 'button';
+    idea.insertAdjacentHTML('afterbegin', icon('idea'));
+    idea.onclick = () => { sfx.click(); (window as unknown as { openFeedback?: (k: 'idea') => void }).openFeedback?.('idea'); };
+    foot.append(how, tut, idea);
     wrap.appendChild(foot);
 
     root.appendChild(wrap);

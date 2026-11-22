@@ -134,3 +134,28 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
   #look { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .look-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
+
+/* Feedback form: a panel over the court, same treatment as the Look picker. */
+#feedback { display: flex; place-items: initial; padding: 0; }
+.fb { margin: auto; width: 100%; max-width: 620px; box-sizing: border-box; padding: clamp(12px, 2.5vw, 24px); display: flex; flex-direction: column; gap: 10px; }
+.fb-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fb h2 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(18px, 3vw, 24px); text-transform: uppercase; letter-spacing: 0.04em; }
+.fb-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-kind { border: 2px solid var(--ink); background: transparent; padding: 6px 11px; font-size: 12px; font-weight: 600; }
+.fb-kind[aria-checked="true"] { background: var(--ink); color: var(--paper); }
+.fb-label { font-size: 13px; font-weight: 600; }
+.fb textarea, .fb input:not([type="checkbox"]) { font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); padding: 8px 10px; width: 100%; box-sizing: border-box; }
+.fb textarea { resize: vertical; min-height: 96px; }
+.fb textarea:focus-visible, .fb input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.fb-count { align-self: flex-end; font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; margin-top: -6px; }
+.fb-check { font-size: 12px; color: var(--mute); display: flex; gap: 6px; align-items: baseline; }
+.fb-trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.fb-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.fb-status { margin: 0; font-size: 13px; flex: 1 1 220px; }
+.fb-status[data-tone="error"] { color: var(--accent); }
+.fb-note { margin: 0; font-size: 11px; color: var(--mute); line-height: 1.5; }
+.fb-done p { margin: 0 0 6px; line-height: 1.5; }
+.fb-done .btn { align-self: flex-start; }
+@media (max-width: 640px) {
+  #feedback { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
