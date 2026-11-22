@@ -213,7 +213,6 @@ export class Game {
         sfx.make();
         sfx.cheer();
         this.renderer.netSwing();
-        this.renderer.crowdMood('cheer');
         this.fig = { kind: 'cheer', t: 0, v: e.swish && Math.random() < 0.3 ? 'flip' : pick(CHEERS), dir: this.fig.dir };
         this.mode?.onScore?.(this, e.swish);
         break;
@@ -233,10 +232,7 @@ export class Game {
     this.launch = null;
     if (!r.made) {
       this.fig = { kind: 'slump', t: 0, v: pick(MISSES), dir: this.fig.dir };
-      if (r.rimOut) {
-        this.renderer.crowdMood('ooh');
-        sfx.ooh();
-      }
+      if (r.rimOut) sfx.ooh(); // the crowd is gone from the picture, but you still hear it
     }
     this.mode?.onShotEnd(this, r);
     for (const f of this.shotListeners) f(r);

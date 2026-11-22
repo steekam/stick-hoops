@@ -60,3 +60,14 @@ What they cover:
 - Layout at phone size (no sideways scrolling, overlay buttons on screen) and the dark theme.
 
 CI runs both suites on every push.
+
+## Look and brand
+
+Pencil on paper: the court is a flat side-view game drawn with depth around it (an angled floor
+with a thick front edge, a ring-shaped rim, slab backboard and wall, cast shadows), shaded with
+hatching rather than grey fills. The depth is drawing only (`src/render/iso.ts`); the physics is
+still the 2D plane at z = 0, so replays are unaffected.
+
+Brand files live in `public/brand/`: `logo.svg` (mark and wordmark), `mark.svg`, `mark-dark.svg`,
+and `public/favicon.svg`. The in-game versions and the icon set are in `src/ui/brand.ts` and
+`src/ui/icons.ts`, drawn in `currentColor` so they follow the light and dark themes.

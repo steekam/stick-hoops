@@ -5,7 +5,12 @@ import { LEVELS, levels, LevelsMode, unlockedLevel } from './modes/solo/levels';
 import type { ModeEntry } from './modes/registry';
 import { createMenu } from './ui/menu';
 import { createShell } from './ui/shell';
+import { MARK } from './ui/brand';
+import { icon } from './ui/icons';
 import { tutorial, tutorialDone } from './ui/tutorial';
+
+document.querySelector('.brand-mark')!.innerHTML = MARK;
+document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon!)));
 
 const canvas = document.getElementById('court') as HTMLCanvasElement;
 const game = new Game(canvas, createShell());

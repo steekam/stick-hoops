@@ -51,6 +51,16 @@ export class Pen {
     c.moveTo(a.x + this.jit(), a.y + this.jit());
     c.lineTo(b.x + this.jit(), b.y + this.jit());
     c.stroke();
+    if (this.boil) {
+      // A second, fainter pencil pass slightly off the first, like a sketch gone over twice.
+      const w = c.lineWidth, al = c.globalAlpha;
+      c.lineWidth = w * 0.45; c.globalAlpha = al * 0.4;
+      c.beginPath();
+      c.moveTo(a.x + 1.2 + this.jit(), a.y - 0.8 + this.jit());
+      c.lineTo(b.x + 1.2 + this.jit(), b.y - 0.8 + this.jit());
+      c.stroke();
+      c.lineWidth = w; c.globalAlpha = al;
+    }
   }
 
   /** Two-bone limb from A toward T. `sign` picks which way the joint bends. */
@@ -72,7 +82,19 @@ export class Pen {
     if (sq) { c.translate(0, R * sq * 0.35); c.scale(1 + 0.4 * sq, 1 - 0.4 * sq); }
     c.rotate(rot);
     c.fillStyle = this.c.paper; c.strokeStyle = this.c.ink; c.lineWidth = 2.5;
-    c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill();
+    // Shading: hatch the whole ball, then lay paper back over the lit side (upper left),
+    // leaving a hatched crescent on the lower right. Done before rotating, so the light stays put.
+    c.save();
+    c.rotate(-rot);
+    c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.clip();
+    c.lineWidth = 0.8; c.globalAlpha = 0.7; c.beginPath();
+    for (let k = -2 * R; k <= 2 * R; k += 3.4) { c.moveTo(k - R, -R); c.lineTo(k + R, R); }
+    c.stroke();
+    c.globalAlpha = 1; c.fillStyle = this.c.paper;
+    c.beginPath(); c.arc(-R * 0.34, -R * 0.36, R * 1.02, 0, Math.PI * 2); c.fill();
+    c.restore();
+    c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.stroke();
     c.lineWidth = 1.5;
     c.beginPath(); c.moveTo(-R, 0); c.lineTo(R, 0); c.moveTo(0, -R); c.lineTo(0, R); c.stroke();
     c.beginPath(); c.arc(-R * 1.15, 0, R * 0.75, -1, 1); c.stroke();

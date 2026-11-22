@@ -1,4 +1,5 @@
 import { sfx } from '../audio/sfx';
+import { icon } from './icons';
 import type { GameUi } from '../game/game';
 import type { Hud, OverlayButton } from '../game/types';
 
@@ -9,7 +10,10 @@ export function createShell(): GameUi {
   const overlay = $('overlay');
 
   const sound = $<HTMLButtonElement>('btn-sound');
-  const label = () => { sound.textContent = sfx.on ? 'Sound on' : 'Sound off'; sound.setAttribute('aria-pressed', String(sfx.on)); };
+  const label = () => {
+    sound.innerHTML = `${icon(sfx.on ? 'sound' : 'mute')}<span>${sfx.on ? 'Sound on' : 'Sound off'}</span>`;
+    sound.setAttribute('aria-pressed', String(sfx.on));
+  };
   sound.onclick = () => { sfx.toggle(); label(); };
   label();
   for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => sfx.resume(), { capture: true });

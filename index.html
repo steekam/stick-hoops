@@ -4,14 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Stick Hoops</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Cg fill=%22none%22 stroke=%22%23121211%22 stroke-linecap=%22round%22 stroke-width=%222.4%22%3E%3Ccircle cx=%2216%22 cy=%229%22 r=%226%22 fill=%22%23fbfbf8%22/%3E%3Cpath d=%22M10 9h12M16 3v12%22 stroke-width=%221.2%22/%3E%3Cellipse cx=%2216%22 cy=%2219%22 rx=%2211%22 ry=%223.4%22 fill=%22none%22/%3E%3Cpath d=%22M6 20l4 9M26 20l-4 9M10 29q6 2 12 0M16 22.5v6.5%22 stroke-width=%221.5%22/%3E%3C/g%3E%3C/svg%3E" />
     <meta name="claude:viewport-fit-sides" content="cover" />
   </head>
   <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <filter id="pencil"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="4" /><feDisplacementMap in="SourceGraphic" scale="1.2" /></filter>
+    </svg>
     <div class="app">
       <header>
-        <h1>Stick Hoops</h1>
+        <h1 id="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Stick Hoops</span></h1>
         <div class="hdr-r">
-          <button id="btn-menu" class="chip" hidden>Menu</button>
+          <button id="btn-menu" class="chip" data-icon="menu" hidden>Menu</button>
           <button id="btn-sound" class="chip" aria-pressed="true">Sound on</button>
         </div>
       </header>

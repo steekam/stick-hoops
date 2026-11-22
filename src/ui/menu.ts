@@ -3,6 +3,8 @@ import { sfx } from '../audio/sfx';
 import { MODES, ModeEntry } from '../modes/registry';
 import { readBests, ModeBests } from '../stats';
 import { renderHowTo } from './howto';
+import { MARK } from './brand';
+import { icon } from './icons';
 
 export interface MenuApi {
   show(): void;
@@ -34,14 +36,6 @@ export function bestLine(b: ModeBests | undefined): string {
   return parts.join(' · ');
 }
 
-/** A shooting stick figure in the title, drawn with the ink colour. */
-const FIGURE = `<svg viewBox="0 0 64 72" aria-hidden="true" focusable="false">
-  <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
-    <circle cx="26" cy="20" r="7"/>
-    <path d="M26 27 L24 50 M24 50 L16 70 M24 50 L32 70 M25 33 L38 18 M25 33 L36 24"/>
-    <circle cx="46" cy="9" r="6"/>
-  </g>
-</svg>`;
 
 export function createMenu(hooks: MenuHooks): MenuApi {
   const root = document.getElementById('menu')!;
@@ -53,7 +47,10 @@ export function createMenu(hooks: MenuHooks): MenuApi {
     b.id = `mode-${m.id}`;
     b.type = 'button';
     const head = el('span', 'mode-head');
-    head.appendChild(el('span', 'mode-name', m.name));
+    const name = el('span', 'mode-name');
+    name.innerHTML = icon(m.id, 'ic mode-ic');
+    name.appendChild(document.createTextNode(m.name));
+    head.appendChild(name);
     const best = bestLine(bests[m.id]);
     if (best) head.appendChild(el('span', 'mode-best', best));
     b.append(head, el('span', 'mode-blurb', m.blurb));
@@ -83,7 +80,7 @@ export function createMenu(hooks: MenuHooks): MenuApi {
     const wrap = el('div', 'menu');
     const title = el('div', 'menu-title');
     const fig = el('span', 'menu-fig');
-    fig.innerHTML = FIGURE;
+    fig.innerHTML = MARK;
     const words = el('div');
     words.append(el('h2', 'menu-h', 'Stick Hoops'), el('p', 'menu-tag', 'Press, pull back, let go.'));
     title.append(fig, words);
@@ -96,10 +93,12 @@ export function createMenu(hooks: MenuHooks): MenuApi {
 
     const foot = el('div', 'menu-foot');
     const how = el('button', 'btn secondary', 'How to play');
+    how.insertAdjacentHTML('afterbegin', icon('help'));
     how.id = 'btn-howto';
     how.type = 'button';
     how.onclick = () => { sfx.click(); renderHow(); };
     const tut = el('button', 'btn secondary', 'Tutorial');
+    tut.insertAdjacentHTML('afterbegin', icon('tutorial'));
     tut.id = 'btn-tutorial';
     tut.type = 'button';
     tut.onclick = () => { sfx.click(); hooks.onTutorial(); };
