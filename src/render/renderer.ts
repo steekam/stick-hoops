@@ -8,7 +8,8 @@ import { flatCircle, hatch, path, proj, Z_BACK, Z_FRONT } from './iso';
 import { Pen } from './pen';
 import { drawCourtLines } from './court';
 import { drawBackdrop, drawBackdropLive, drawScoreboard, floorFill } from './backdrops/index';
-import { settings } from '../settings';
+import { settings, type Backdrop } from '../settings';
+import { makeWorld } from '../sim/world';
 
 const FONT = 'ui-monospace, Menlo, Consolas, monospace';
 
@@ -146,10 +147,40 @@ export class Renderer {
     if (this.bg && key === this.bgKey) return this.bg;
     const bg = this.bg ?? document.createElement('canvas');
     bg.width = canvas.width; bg.height = canvas.height;
+    this.paintCourt(bg, settings().backdrop);
+    this.bg = bg;
+    this.bgKey = key;
+    return bg;
+  }
+
+  /**
+   * A small picture of a backdrop with the hoop in place, for the Look picker. Uses the same
+   * drawing as the game, so what you pick is exactly what you get.
+   */
+  thumbnail(backdrop: Backdrop, width: number, scoreboard: boolean): HTMLCanvasElement {
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(width * d); cv.height = Math.round((width * H) / W * d);
+    this.paintCourt(cv, backdrop);
+    const x = cv.getContext('2d')!;
+    x.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+    x.lineCap = 'round'; x.lineJoin = 'round';
+    const saved = this.ctx;
+    (this as unknown as { ctx: CanvasRenderingContext2D }).ctx = x;
+    const h = hoopGeom(makeWorld(), 0), fake = { time: 0 } as Game;
+    this.drawHoopBack(fake, h);
+    this.drawHoopFront(fake, h);
+    if (scoreboard) drawScoreboard(x, this.pen.c, { big: '24', small: '0:42 · ×2', label: '60 Seconds' });
+    (this as unknown as { ctx: CanvasRenderingContext2D }).ctx = saved;
+    return cv;
+  }
+
+  private paintCourt(bg: HTMLCanvasElement, backdrop: Backdrop): void {
+    const { pen } = this, c = pen.c;
     const x = bg.getContext('2d')!;
     x.setTransform(1, 0, 0, 1, 0, 0);
     x.fillStyle = c.paper; x.fillRect(0, 0, bg.width, bg.height);
-    x.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    x.setTransform(bg.width / W, 0, 0, bg.height / H, 0, 0);
     x.lineCap = 'round'; x.lineJoin = 'round';
 
     // Paper grain: a few hundred faint short strokes, fixed so they never flicker.
@@ -161,13 +192,13 @@ export class Renderer {
     x.stroke();
     x.globalAlpha = 1;
 
-    drawBackdrop(x, settings().backdrop, c);
+    drawBackdrop(x, backdrop, c);
 
     // The floor: a plane seen from above, with a thick front edge like a stage.
     const A = proj(-260, FLOOR, Z_FRONT), B = proj(W + 120, FLOOR, Z_FRONT);
     const C = proj(W + 120, FLOOR, Z_BACK), D = proj(-260, FLOOR, Z_BACK);
     path(x, [A, B, C, D], true);
-    x.fillStyle = floorFill(settings().backdrop, c); x.fill(); // hardwood indoors, asphalt outside
+    x.fillStyle = floorFill(backdrop, c); x.fill(); // hardwood indoors, asphalt outside
     // Floor shading: light hatching everywhere, a second pass darkening toward the back.
     x.strokeStyle = c.mute; x.lineWidth = 0.7; x.globalAlpha = 0.22;
     path(x, [A, B, C, D], true); hatch(x, box([A, B, C, D]), 11, -0.42);
@@ -194,7 +225,7 @@ export class Renderer {
     path(x, [D, C]); x.stroke();
     const A2 = { x: A.x, y: A.y + 10 }, B2 = { x: B.x, y: B.y + 10 };
     path(x, [A, B, B2, A2], true);
-    x.fillStyle = floorFill(settings().backdrop, c); x.fill();
+    x.fillStyle = floorFill(backdrop, c); x.fill();
     x.strokeStyle = c.ink; x.lineWidth = 1; x.globalAlpha = 0.55;
     path(x, [A, B, B2, A2], true); hatch(x, box([A, B, B2, A2]), 4, Math.PI / 4);
     x.globalAlpha = 1; x.lineWidth = 2.4;
@@ -203,10 +234,6 @@ export class Renderer {
 
     // Court markings: a real half court seen from the sideline (see court.ts).
     drawCourtLines(x, c.ink, c.mute, Z_FRONT, c.paint);
-
-    this.bg = bg;
-    this.bgKey = key;
-    return bg;
   }
 
   // ---------- shadows ----------

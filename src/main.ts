@@ -7,7 +7,7 @@ import { createMenu } from './ui/menu';
 import { createShell } from './ui/shell';
 import { MARK } from './ui/brand';
 import { icon } from './ui/icons';
-import { BACKDROPS, settings, updateSettings } from './settings';
+import { createLook } from './ui/look';
 import { tutorial, tutorialDone } from './ui/tutorial';
 
 document.querySelector('.brand-mark')!.innerHTML = MARK;
@@ -19,31 +19,6 @@ attachInput(game);
 
 const levelBar = document.getElementById('levels')!;
 
-/** Look switcher: backdrop and the hanging scoreboard. A settings panel can reuse this. */
-const themeBar = document.getElementById('themes')!;
-function renderThemes(): void {
-  const st = settings();
-  themeBar.replaceChildren();
-  const label = document.createElement('span');
-  label.textContent = 'Backdrop';
-  themeBar.appendChild(label);
-  for (const b of BACKDROPS) {
-    const btn = document.createElement('button');
-    btn.id = `bd-${b.id}`;
-    btn.textContent = b.name;
-    btn.setAttribute('aria-pressed', String(st.backdrop === b.id));
-    btn.onclick = () => { updateSettings({ backdrop: b.id }); renderThemes(); };
-    themeBar.appendChild(btn);
-  }
-  const sb = document.createElement('button');
-  sb.id = 'bd-scoreboard';
-  sb.className = 'toggle';
-  sb.textContent = st.scoreboard ? 'Scoreboard on' : 'Scoreboard off';
-  sb.setAttribute('aria-pressed', String(st.scoreboard));
-  sb.onclick = () => { updateSettings({ scoreboard: !settings().scoreboard }); renderThemes(); };
-  themeBar.appendChild(sb);
-}
-renderThemes();
 const menuBtn = document.getElementById('btn-menu') as HTMLButtonElement;
 
 /** Level picker shown above the court in Levels mode. */
@@ -98,6 +73,10 @@ menuBtn.onclick = () => toMenu();
 
 if (tutorialDone()) menu.show();
 else startTutorial();
+
+// Look picker: previews of every backdrop. Shooting pauses while it's open.
+const look = createLook(game.renderer, (open) => { game.inputEnabled = !open; if (!open) canvas.focus(); });
+(document.getElementById('btn-look') as HTMLButtonElement).onclick = () => (look.isOpen ? look.close() : look.open());
 
 let last = performance.now();
 function frame(now: number): void {
