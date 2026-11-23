@@ -273,3 +273,8 @@ body.cam-follow.sb-on #hud-r { visibility: visible; }
   .about::backdrop { background: color-mix(in srgb, var(--paper) 92%, transparent); }
   .about-scroll { max-height: calc(100dvh - 20px); overscroll-behavior: contain; padding-bottom: 28px; }
 }
+
+/* Follow camera: cards (pause, end of round, HORSE, level start) sit in the thumb pad below the
+   floor, so they never cover the shooter or the hoop. */
+body.cam-follow.playing #overlay { padding-bottom: max(16px, 5vh); }
+body.cam-follow.playing #overlay .card { margin: auto auto 0; }

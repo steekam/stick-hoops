@@ -20,7 +20,7 @@ export const MAX_ZOOM = 2.5;
 /** Never magnify beyond this many CSS px per world unit: the cached court is that sharp. */
 export const MAX_CSS_SCALE = 1.7;
 /** Where the floor's front edge sits on the canvas while aiming; below it is the thumb pad. */
-export const FLOOR_AT = 0.7;
+export const FLOOR_AT = 0.52; // floor front edge this far down the canvas while aiming; the thumb pad gets the rest
 const FLOOR_FRONT = proj(0, FLOOR, Z_FRONT).y + 10; // bottom of the stage-like front edge
 /** How long the camera stays on the result before easing back. */
 const HOLD = 0.9;
