@@ -41,6 +41,8 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { status: h['Access-Control-Allow-Origin'] ? 204 : 403, headers: h });
     if (req.method !== 'POST') return json(405, { error: 'POST a report.' }, h);
     if (!h['Access-Control-Allow-Origin']) return json(403, { error: 'Unknown site.' }, h);
+    // Deployed but not given a GitHub token yet: say so at once, and the game offers its GitHub link.
+    if (!env.GITHUB_TOKEN) return json(503, { error: 'Reports are not set up yet.' }, h);
 
     const ip = req.headers.get('CF-Connecting-IP') ?? 'unknown';
     if (rateLimited(ip)) return json(429, { error: 'Too many reports. Try again in a few minutes.' }, h);

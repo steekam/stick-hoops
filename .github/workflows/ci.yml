@@ -1,24 +1,65 @@
 name: CI
+
+# Two jobs in parallel: quick checks, and the browser suite. Doc-only and trailer-only changes
+# skip CI, and a new push to the same branch cancels the run it replaces.
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'promo/**', 'LICENSE']
   pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'promo/**', 'LICENSE']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  check:
+    name: Typecheck and unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
-      - run: npx @e2e-dev/web install chromium --with-deps
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      E2E_TELEMETRY_DISABLED: '1'
+      WORKERS: '4' # GitHub's Linux runners have 4 cores
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # The browser download is most of the old CI time. Cache it per e2e version; the runner
+      # image already has Chrome's system libraries, so no apt step is needed.
+      - id: e2e
+        run: echo "version=$(node -p "require('@e2e-dev/web/package.json').version")" >> "$GITHUB_OUTPUT"
+      - id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: e2e-browsers-${{ runner.os }}-${{ steps.e2e.outputs.version }}
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx @e2e-dev/web install chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-traces
+          name: e2e-traces
           path: .e2e/results/
+          retention-days: 7

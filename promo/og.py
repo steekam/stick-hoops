@@ -1,11 +1,11 @@
 """Build public/og.png (the 1200×630 link preview) from a rendered trailer frame.
 
-    node promo/render.mjs --stills 320 --out promo/out && python3 promo/og.py promo/out/frame-0320.png
+    node promo/render.mjs --stills 640 --out promo/out && python3 promo/og.py promo/out/frame-0640.png
 """
 import sys
 from PIL import Image, ImageDraw, ImageFont
 
-src = sys.argv[1] if len(sys.argv) > 1 else 'promo/out/frame-0320.png'
+src = sys.argv[1] if len(sys.argv) > 1 else 'promo/out/frame-0640.png'
 im = Image.open(src).convert('RGB').crop((0, 36, 1920, 1044)).resize((1200, 630), Image.LANCZOS)
 d = ImageDraw.Draw(im)
 INK, PAPER, ACC = (18, 18, 17), (251, 251, 248), (217, 88, 26)

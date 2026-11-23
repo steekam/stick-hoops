@@ -35,6 +35,7 @@ await page.goto(url);
 await page.waitForFunction(() => window.trailer);
 await page.evaluate(() => window.trailer.setup());
 const N = await page.evaluate(() => window.trailer.N);
+const FPS = await page.evaluate(() => window.trailer.FPS);
 console.log('plans', JSON.stringify(await page.evaluate(() => window.trailer.plans())));
 
 if (stills) {
@@ -57,7 +58,7 @@ if (audioOnly) {
   await mux();
   process.exit();
 }
-const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'png', '-i', '-',
+const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-',
   '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '16', '-pix_fmt', 'yuv420p', video], { stdio: ['pipe', 'inherit', 'inherit'] });
 const done = new Promise((ok) => ff.on('close', ok));
 const t0 = Date.now();

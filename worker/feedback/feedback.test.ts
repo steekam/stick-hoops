@@ -97,6 +97,14 @@ describe('worker', () => {
     expect((await worker.fetch(post(good), env)).status).toBe(502);
   });
 
+  it('answers 503 before a GitHub token is set, without calling GitHub', async () => {
+    const gh = vi.fn();
+    vi.stubGlobal('fetch', gh);
+    const res = await worker.fetch(post(good), { ...env, GITHUB_TOKEN: '' });
+    expect(res.status).toBe(503);
+    expect(gh).not.toHaveBeenCalled();
+  });
+
   it('allows five reports per IP per ten minutes', () => {
     const t = 1_000_000;
     for (let i = 0; i < 5; i++) expect(rateLimited('1.2.3.4', t + i)).toBe(false);

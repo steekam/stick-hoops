@@ -38,7 +38,7 @@ const fx = prng(7); // effects-only randomness, separate from the game's
 // ---------- timing ----------
 const params = new URLSearchParams(location.search);
 const SITE = params.get('site') || 'stick-hoops.pages.dev';
-const FPS = 30, SPB = 0.5, BEATS = 80;
+const FPS = Number(params.get('fps') || 60), SPB = 0.5, BEATS = 80;
 const N = Math.round(BEATS * SPB * FPS);
 const W = 1920, H = 1080;
 const bt = (b: number) => b * SPB; // beat → seconds
@@ -150,8 +150,8 @@ function plan(c: Clip): void {
         const f = flightFrames(cloneWorld(c.world ?? {}), c.px, T_LAUNCH, vx, vy, !!c.slow, c.miss ? 'rim' : 'score');
         Object.assign(c, { vx, vy, r });
         c.launchF = bf(c.at) - f + 1;
-        c.aimF = Math.max(bf(c.start) + 4, c.launchF - Math.round((c.aim ?? 0.75) * FPS));
-        c.startTick = T_LAUNCH - (c.launchF - bf(c.start)) * 8;
+        c.aimF = Math.max(bf(c.start) + Math.round(FPS / 8), c.launchF - Math.round((c.aim ?? 0.75) * FPS));
+        c.startTick = T_LAUNCH - (c.launchF - bf(c.start)) * Math.round(1 / DT / FPS);
         return;
       }
     }
@@ -246,18 +246,33 @@ function worldT(cam: Cam): void {
 }
 function screenT(): void { o.setTransform(1, 0, 0, 1, shakeX * 0.5, shakeY * 0.5); }
 
-function drawGame(cam: Cam): void {
+/** The camera eases toward where each scene asks it to be, so zooms and pans never jerk. */
+let camState: Cam | null = null;
+const snapCamera = () => { camState = null; };
+function easeCam(target: Cam, rate = 7): Cam {
+  if (!camState) { camState = { ...target }; return camState; }
+  const k = 1 - Math.exp(-rate / FPS);
+  camState = { z: lerp(camState.z, target.z, k), fx: lerp(camState.fx, target.fx, k), fy: lerp(camState.fy, target.fy, k), rot: lerp(camState.rot ?? 0, target.rot ?? 0, k) };
+  return camState;
+}
+function drawGame(target: Cam, rate = 7): Cam {
+  const cam = easeCam(target, rate);
   paper();
   g.draw();
   worldT(cam);
   o.drawImage(gc, 0, 0, 960, 540);
   o.setTransform(1, 0, 0, 1, 0, 0);
+  return cam;
 }
 function paper(): void { o.setTransform(1, 0, 0, 1, 0, 0); o.fillStyle = PAPER; o.fillRect(0, 0, W, H); }
 
 /** Rubber-stamp text: slams in from big, with an offset ink shadow. */
 function stamp(text: string, x: number, y: number, size: number, t: number, o2: { font?: string; weight?: string; fill?: string; rot?: number; align?: CanvasTextAlign; shadow?: number; stroke?: number; alpha?: number } = {}): void {
   if (t < 0) return;
+  // while slamming in, two fading ghosts at earlier (bigger) scales read as motion blur
+  if (t < 0.11 && !o2.alpha) {
+    for (const [dt, a] of [[0.035, 0.18], [0.018, 0.32]] as const) stamp(text, x, y, size, Math.max(0.001, t - dt), { ...o2, alpha: a * Math.min(1, t / 0.03), shadow: 0 });
+  }
   const k = Math.min(1, t / 0.11);
   const s = 2.3 - 1.3 * k * k + (k >= 1 ? Math.sin(Math.min(1, (t - 0.11) / 0.2) * Math.PI) * 0.05 : 0);
   o.save();
@@ -314,10 +329,10 @@ function burst(word: string, x: number, y: number, t: number, scale = 1, rot = -
   o.globalAlpha = 1 - outP;
   o.translate(x, y); o.rotate(rot + Math.sin(t * 18) * 0.02 * (1 - inP));
   // speed lines
-  const reach = Math.min(1, t * 3.5);
+  const reach = Math.min(1, t * 3.5) * (1 + Math.sin(t * 9) * 0.05);
   o.fillStyle = INK;
   for (let i = 0; i < 34; i++) {
-    const a = (i / 34) * Math.PI * 2 + r() * 0.12, r0 = (230 + r() * 40) * s, r1 = r0 + (160 + r() * 380) * reach * s, wdt = (3 + r() * 7) * s;
+    const a = (i / 34) * Math.PI * 2 + r() * 0.12 + t * 0.25, r0 = (230 + r() * 40) * s, r1 = r0 + (160 + r() * 380) * reach * s, wdt = (3 + r() * 7) * s;
     const ca = Math.cos(a), sa = Math.sin(a);
     o.beginPath();
     o.moveTo(ca * r0 - sa * wdt, sa * r0 + ca * wdt); o.lineTo(ca * r0 + sa * wdt, sa * r0 - ca * wdt); o.lineTo(ca * r1, sa * r1);
@@ -402,12 +417,14 @@ function pencil(x: number, y: number, ang: number): void {
 /** Ink trail behind the flying ball, in world units. */
 const trail: { x: number; y: number }[] = [];
 function drawTrail(cam: Cam): void {
-  if (g.ball) { trail.push({ x: g.ball.x, y: g.ball.y }); if (trail.length > 14) trail.shift(); } else if (trail.length) trail.shift();
+  if (g.ball) { trail.push({ x: g.ball.x, y: g.ball.y }); if (trail.length > Math.round(FPS * 0.45)) trail.shift(); } else if (trail.length) trail.shift();
   if (trail.length < 3) return;
   worldT(cam);
+  // a tapered comet: overlapping segments with growing width and opacity
+  o.lineCap = 'round';
   for (let i = 1; i < trail.length; i++) {
     const k = i / trail.length;
-    o.strokeStyle = `rgba(217,88,26,${0.5 * k})`; o.lineWidth = 2 + 16 * k; o.lineCap = 'round';
+    o.strokeStyle = `rgba(240,136,62,${0.45 * k * k})`; o.lineWidth = 1 + 19 * k;
     o.beginPath(); o.moveTo(trail[i - 1].x, trail[i - 1].y); o.lineTo(trail[i].x, trail[i].y); o.stroke();
   }
   o.setTransform(1, 0, 0, 1, 0, 0);
@@ -484,7 +501,7 @@ const scenes: Scene[] = [
         o.save(); o.globalAlpha = 0;
         const head = strokePath(revealPts, 0, p, 0.0001);
         o.restore();
-        if (head) pencil(head.x, head.y, -0.9 + Math.sin(F * 0.7) * 0.06);
+        if (head) pencil(head.x, head.y, -0.9 + Math.sin(clock * 21) * 0.06);
       }
       screenT();
       caption('A BASKETBALL GAME', 120, 900, bt(b - 5), bt(1.5), 52);
@@ -545,13 +562,13 @@ const scenes: Scene[] = [
       const rc = rimC(g.world, g.tick);
       const zoomIn = smooth(slowing * 1.4);
       const cam = { z: 1 + 0.35 * zoomIn + (b - c.start) * 0.01, fx: lerp(480, rc.x - 60, zoomIn * 0.8), fy: lerp(270, rc.y + 10, zoomIn * 0.8) };
-      drawGame(cam);
-      drawTrail(cam);
-      drawFinger(cam);
+      const sc = drawGame(cam, 5);
+      drawTrail(sc);
+      drawFinger(sc);
       screenT();
       for (const [text, at, dur] of caps) caption(text, 110, 150, bt(b - at), bt(dur), 64);
       // the burst sits over the hoop, in screen space
-      const hx = W / 2 + (rc.x - cam.fx) * 2 * cam.z, hy = H / 2 + (rc.y - cam.fy) * 2 * cam.z;
+      const hx = W / 2 + (rc.x - sc.fx) * 2 * sc.z, hy = H / 2 + (rc.y - sc.fy) * 2 * sc.z;
       burst(word, clamp(hx - 330, 420, W - 420), clamp(hy - 120, 300, H - 300), bt(b - c.at), word.length > 8 ? 0.85 : 1, -0.08, c.start);
     },
   })),
@@ -597,8 +614,8 @@ const scenes: Scene[] = [
     frame(F, b) {
       stepClip(clips.p2, F);
       const z = 1 + smooth((b - 51) / 3) * 0.08;
-      const cam = { z, fx: 480, fy: 270 };
-      drawGame(cam); drawTrail(cam); drawFinger(cam);
+      const sc = drawGame({ z, fx: 480, fy: 270 });
+      drawTrail(sc); drawFinger(sc);
       screenT();
       caption('PASS THE PHONE.', 110, 150, bt(b - 48.2), bt(1.6), 64);
       caption('P2 TO MATCH…', 110, 150, bt(b - 49.9), bt(1.4), 64);
@@ -625,9 +642,10 @@ const scenes: Scene[] = [
       const pts = Math.max(0, Math.floor((b - 60) * 4)) * 3;
       hudFn = () => ({ left: 'Stick Hoops', mid: `0:${String(Math.max(4, 60 - Math.floor((b - 56) * 7))).padStart(2, '0')}`, right: String(pts).padStart(2, '0') });
       g.update(1 / FPS);
-      drawGame({ z: 1 + smooth((b - 56) / 8) * 0.12, fx: 500, fy: 260 });
       const since = bt(b - cur[0]);
-      flash(0.5 - since * 6);
+      // each cut lands with a small zoom punch that settles, instead of a flash
+      const punch = 0.06 * Math.exp(-since * 9);
+      drawGame({ z: 1 + smooth((b - 56) / 8) * 0.12 + punch, fx: 500, fy: 260 }, 30);
       screenT();
       caption('PICK YOUR COURT', 110, 150, bt(b - 56.2), bt(3.5), 64);
       const names: Record<Backdrop, string> = { plain: 'PLAIN', gym: 'GYM', street: 'STREET', notebook: 'NOTEBOOK' };
@@ -649,7 +667,8 @@ const scenes: Scene[] = [
       const z = b < 70 ? 1 + 0.55 * follow * (0.6 + slowing * 0.6) : 1 + Math.max(0, 0.25 - bt(b - 70) * 0.6);
       const target = g.ball ? { x: lerp(g.ball.x, rc.x, 0.45), y: lerp(g.ball.y, rc.y, 0.45) } : rc;
       const cam = { z, fx: lerp(480, target.x, follow), fy: lerp(270, target.y, follow) };
-      drawGame(cam); drawTrail(cam); drawFinger(cam);
+      if (F === bf(70)) snapCamera(); // the drop punches straight out
+      const sc = drawGame(cam, b < 70 ? 4 : 6); drawTrail(sc); drawFinger(sc);
       // darken the edges as time runs out
       if (b < 70) {
         o.setTransform(1, 0, 0, 1, 0, 0);
@@ -699,7 +718,7 @@ const scenes: Scene[] = [
       const tag = 'Pull back. Let go. Swish.';
       const shown = Math.floor(clamp((b - 74) / 1.6) * tag.length);
       o.font = `400 46px ${MONO}`; o.fillStyle = MUTE; o.textAlign = 'center'; o.textBaseline = 'alphabetic';
-      o.fillText(tag.slice(0, shown) + (shown < tag.length && shown > 0 && F % 10 < 5 ? '▍' : ''), W / 2, 660);
+      o.fillText(tag.slice(0, shown) + (shown < tag.length && shown > 0 && Math.floor(clock * 3) % 2 === 0 ? '▍' : ''), W / 2, 660);
       ['6 MODES', '2 PLAYERS', 'NO SIGN-UP', 'PLAYS OFFLINE'].forEach((s, i) => {
         const t = bt(b - (75.8 + i * 0.5));
         if (t < 0) return;
@@ -748,29 +767,43 @@ function frame(F: number): void {
   clock = F / FPS;
   const b = clock / SPB;
   const si = scenes.findIndex((s) => b >= s.from && b < s.to);
-  if (si !== sceneIdx) { sceneIdx = si; scenes[si]?.enter?.(); }
+  if (si !== sceneIdx) { sceneIdx = si; snapCamera(); scenes[si]?.enter?.(); }
   // shake
   trauma = Math.max(0, trauma - 2.2 / FPS) + (shakeAt.get(F) ?? 0);
   const tr = Math.min(1, trauma) ** 2;
-  shakeX = (fx() - 0.5) * 70 * tr; shakeY = (fx() - 0.5) * 70 * tr; shakeR = (fx() - 0.5) * 0.03 * tr;
+  // smooth noise (sums of sines), not a new random offset every frame
+  const n1 = (a: number, b2: number, c: number) => Math.sin(clock * a) * 0.5 + Math.sin(clock * b2 + 1.7) * 0.3 + Math.sin(clock * c + 4.1) * 0.2;
+  shakeX = n1(31, 53, 79) * 44 * tr; shakeY = n1(37, 61, 89) * 44 * tr; shakeR = n1(23, 47, 71) * 0.022 * tr;
   o.setTransform(1, 0, 0, 1, 0, 0);
   scenes[si]?.frame(F, b);
   // hard cuts inside the montage: two frames of ink, then the next play
-  for (const cb of cuts) { const d = F - bf(cb); if (d >= 0 && d < 2) flash(1, INK); else if (d >= 2 && d < 5) flash(0.6 - (d - 2) * 0.2); }
+  // cuts inside the montage: a fast diagonal ink swipe across the frame
+  const half = Math.round(FPS * 0.12);
+  for (const cb of cuts) {
+    const d = F - bf(cb);
+    if (d < -half || d >= half) continue;
+    // the band is wider than the screen, so for a moment it covers everything and the cut hides there
+    const p = (d + half) / (half * 2), x = lerp(-1100, W + 1900, smooth(p));
+    o.setTransform(1, 0, 0, 1, 0, 0); o.fillStyle = INK;
+    o.beginPath(); o.moveTo(x - 1400, 0); o.lineTo(x + 1000, 0); o.lineTo(x + 600, H); o.lineTo(x - 1800, H); o.closePath(); o.fill();
+    o.fillStyle = ACCENT; // a thin orange leading edge
+    o.beginPath(); o.moveTo(x + 1000, 0); o.lineTo(x + 1040, 0); o.lineTo(x + 640, H); o.lineTo(x + 600, H); o.closePath(); o.fill();
+  }
   // scribble wipes between scenes
   for (const wb of wipes) {
-    const wf = bf(wb), d = F - wf;
-    if (d < -7 || d >= 7) continue;
+    const wf = bf(wb), d = F - wf, hw = Math.round(FPS * 0.23);
+    if (d < -hw || d >= hw) continue;
     if (!wipePts.has(wb)) wipePts.set(wb, scribblePath(9, wb * 13, 200));
     const pts = wipePts.get(wb)!;
     o.setTransform(1, 0, 0, 1, 0, 0); o.strokeStyle = INK;
-    if (d < 0) strokePath(pts, 0, smooth((d + 7) / 7), 330);
-    else strokePath(pts, smooth(d / 7), 1, 330);
+    if (d < 0) strokePath(pts, 0, smooth((d + hw) / hw), 330);
+    else strokePath(pts, smooth(d / hw), 1, 330);
   }
   // paper grain over everything
   o.setTransform(1, 0, 0, 1, 0, 0);
   o.globalAlpha = 0.07; o.globalCompositeOperation = 'multiply';
-  o.drawImage(grain, -Math.floor(fx() * 64), -Math.floor(fx() * 64));
+  const gstep = Math.floor(clock * 24), gr = prng(gstep + 1);
+  o.drawImage(grain, -Math.floor(gr() * 64), -Math.floor(gr() * 64));
   o.globalAlpha = 1; o.globalCompositeOperation = 'source-over';
   timeline.push(F);
 }
@@ -793,33 +826,70 @@ function cues(): void {
   for (const b of [62, 62.5, 63, 63.25, 63.5, 63.75]) cue('x:shutter', b);
   for (const b of [64, 65, 66]) cue('x:heart', b);
   for (const b of [67, 68, 69]) { cue('x:tick', b); cue('x:heart', b); addShake(b, 0.25); }
+  cue('x:squeak', clips.buzzer.launchF! / FPS / SPB - 0.1);
   cue('buzzer', 70); cue('fanfare', 70.3); addShake(70, 1.1); addShake(70.6, 0.4); cue('x:stamp', 70.6);
   cue('x:land', 72.5); addShake(72.5, 0.4); cue('x:stamp', 73);
   for (let i = 0; i < 4; i++) cue('x:pop', 75.8 + i * 0.5, i + 1);
 }
 
 async function audio(): Promise<string> {
-  const SR = 48000, LEN = bt(BEATS) + 1.5;
+  const SR = 48000, LEN = bt(BEATS) + 2.5;
   const ctx = new OfflineAudioContext(2, Math.ceil(SR * LEN), SR);
-  const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
-  const master = ctx.createGain(); master.gain.value = 0.9;
-  comp.connect(master).connect(ctx.destination);
-  const music = ctx.createGain(); music.gain.value = 0.8; music.connect(comp);
-  const fxBus = ctx.createGain(); fxBus.gain.value = 0.8; fxBus.connect(comp);
-  const gameBus = ctx.createGain(); gameBus.gain.value = 1.0; gameBus.connect(comp);
+  const at = (b: number) => bt(b);
+  const rnd = prng(4242);
+
+  // ---------- mix: buses, reverb, sidechain, master ----------
+  const gain = (v: number, to?: AudioNode) => { const g2 = ctx.createGain(); g2.gain.value = v; if (to) g2.connect(to); return g2; };
+  const glue = ctx.createDynamicsCompressor();
+  glue.threshold.value = -16; glue.ratio.value = 2; glue.attack.value = 0.01; glue.release.value = 0.25; glue.knee.value = 8;
+  const clip = ctx.createWaveShaper();
+  { const c = new Float32Array(2048); for (let i = 0; i < c.length; i++) { const x = (i / (c.length - 1)) * 2 - 1; c[i] = Math.tanh(1.4 * x) / Math.tanh(1.4); } clip.curve = c; clip.oversample = '4x'; }
+  const lim = ctx.createDynamicsCompressor();
+  lim.threshold.value = -2; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.08; lim.knee.value = 0;
+  glue.connect(clip).connect(lim).connect(ctx.destination);
+  // Headroom: everything enters the master quietly so the compressors shape rather than flatten.
+  // (DynamicsCompressor adds its own makeup gain; the final file is loudness-normalized anyway.)
+  const mixIn = gain(0.32, glue);
+
+  // reverb: a generated stereo impulse, a small room that blooms into a hall
+  const verb = ctx.createConvolver();
+  {
+    const len = Math.floor(SR * 2.6), ir = ctx.createBuffer(2, len, SR), rr = prng(77);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch); let lp = 0;
+      for (let i = 0; i < len; i++) {
+        const t = i / SR, n = rr() * 2 - 1;
+        lp += (n - lp) * (0.25 + 0.6 * Math.exp(-t * 2)); // darker as it decays
+        d[i] = t < 0.018 ? 0 : lp * Math.pow(1 - t / 2.6, 2.2) * (t < 0.06 ? 1.6 : 1);
+      }
+    }
+    verb.buffer = ir;
+  }
+  verb.connect(gain(0.55, mixIn));
+  const send = (node: AudioNode, amt: number) => node.connect(gain(amt, verb));
+
+  const drums = gain(0.95, mixIn);
+  const snareBus = gain(1, drums); send(snareBus, 0.28);
+  const duck = gain(1, mixIn); // music ducks under every kick
+  const keysLP = ctx.createBiquadFilter(); keysLP.type = 'lowpass'; keysLP.Q.value = 0.7;
+  const keys = gain(0.42); keys.connect(keysLP).connect(duck); send(keysLP, 0.32);
+  const bassBus = gain(0.85, duck);
+  const lead = gain(0.36, duck); send(lead, 0.42);
+  const crowdBus = gain(0.5, mixIn); send(crowdBus, 0.25);
+  const fxBus = gain(0.7, mixIn); send(fxBus, 0.18);
+  const gameBus = gain(0.9, mixIn); send(gameBus, 0.12);
 
   const noiseBuf = ctx.createBuffer(1, SR * 2, SR);
-  { const d = noiseBuf.getChannelData(0); const r = prng(99); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
-
-  const env = (gn: GainNode, t: number, a: number, peak: number, dec: number) => {
-    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a); gn.gain.exponentialRampToValueAtTime(0.0001, t + a + dec);
+  { const d = noiseBuf.getChannelData(0), r2 = prng(99); for (let i = 0; i < d.length; i++) d[i] = r2() * 2 - 1; }
+  const noiseSrc = (t: number, dur: number) => { const s2 = ctx.createBufferSource(); s2.buffer = noiseBuf; s2.loop = true; s2.start(t, rnd()); s2.stop(t + dur + 0.05); return s2; };
+  const env = (pm: AudioParam, t: number, a: number, peak: number, dec: number) => {
+    pm.setValueAtTime(0.0001, t); pm.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a); pm.exponentialRampToValueAtTime(0.0001, t + a + dec);
   };
   const tone = (dest: AudioNode, t: number, f: number, type: OscillatorType, peak: number, dec: number, o2: { to?: number; a?: number; pan?: number; lp?: number } = {}) => {
     const osc = ctx.createOscillator(), gn = ctx.createGain();
     osc.type = type; osc.frequency.setValueAtTime(f, t);
     if (o2.to) osc.frequency.exponentialRampToValueAtTime(o2.to, t + (o2.a ?? 0.003) + dec);
-    env(gn, t, o2.a ?? 0.003, peak, dec);
+    env(gn.gain, t, o2.a ?? 0.003, peak, dec);
     let node: AudioNode = osc.connect(gn);
     if (o2.lp) { const f2 = ctx.createBiquadFilter(); f2.type = 'lowpass'; f2.frequency.value = o2.lp; node = node.connect(f2); }
     if (o2.pan) { const p = ctx.createStereoPanner(); p.pan.value = o2.pan; node = node.connect(p); }
@@ -827,132 +897,292 @@ async function audio(): Promise<string> {
     osc.start(t); osc.stop(t + (o2.a ?? 0.003) + dec + 0.05);
   };
   const noise = (dest: AudioNode, t: number, peak: number, dec: number, o2: { type?: BiquadFilterType; f?: number; to?: number; q?: number; a?: number; pan?: number } = {}) => {
-    const src = ctx.createBufferSource(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
-    src.buffer = noiseBuf; flt.type = o2.type ?? 'bandpass'; flt.frequency.setValueAtTime(o2.f ?? 1000, t);
+    const src = noiseSrc(t, (o2.a ?? 0.003) + dec), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
+    flt.type = o2.type ?? 'bandpass'; flt.frequency.setValueAtTime(o2.f ?? 1000, t);
     if (o2.to) flt.frequency.exponentialRampToValueAtTime(o2.to, t + (o2.a ?? 0.003) + dec);
     flt.Q.value = o2.q ?? 1;
-    env(gn, t, o2.a ?? 0.003, peak, dec);
+    env(gn.gain, t, o2.a ?? 0.003, peak, dec);
     let node: AudioNode = src.connect(flt).connect(gn);
     if (o2.pan) { const p = ctx.createStereoPanner(); p.pan.value = o2.pan; node = node.connect(p); }
     node.connect(dest);
-    src.start(t, fx() * 1.0); src.stop(t + (o2.a ?? 0.003) + dec + 0.05);
   };
 
-  // instruments
-  const kick = (t: number, v = 1, big = false) => { tone(music, t, big ? 130 : 155, 'sine', 0.95 * v, big ? 0.9 : 0.36, { to: 40 }); tone(music, t, 2200, 'triangle', 0.08 * v, 0.012); if (big) tone(music, t, 55, 'sine', 0.6 * v, 1.4); };
-  const snare = (t: number, v = 1) => { noise(music, t, 0.5 * v, 0.17, { f: 1900, q: 0.7 }); noise(music, t, 0.25 * v, 0.09, { type: 'highpass', f: 5000 }); tone(music, t, 200, 'triangle', 0.3 * v, 0.07, { to: 150 }); };
-  const clap = (t: number, v = 1) => { for (const d of [0, 0.011, 0.023]) noise(music, t + d, 0.35 * v, d === 0.023 ? 0.14 : 0.02, { f: 1500, q: 1.4 }); };
-  const hat = (t: number, v = 1, open = false) => noise(music, t, 0.18 * v, open ? 0.24 : 0.035, { type: 'highpass', f: 7200, pan: 0.25 });
-  const bass = (t: number, f: number, d: number, v = 1) => { tone(music, t, f, 'sawtooth', 0.32 * v, d, { lp: 320, a: 0.006 }); tone(music, t, f, 'sine', 0.35 * v, d * 1.1); };
-  const pluck = (t: number, fs: number[], v = 1) => fs.forEach((f, i) => { tone(music, t + i * 0.012, f, 'triangle', 0.11 * v, 0.55, { lp: 2600, pan: (i - 1.5) * 0.25 }); tone(music, t + i * 0.012, f * 2, 'sine', 0.025 * v, 0.4); });
-  const pad = (t: number, d: number, fs: number[], v = 1, cutoff = 900) => fs.forEach((f) => {
-    for (const det of [-6, 6]) {
-      const osc = ctx.createOscillator(), gn = ctx.createGain(), lp = ctx.createBiquadFilter();
-      osc.type = 'sawtooth'; osc.frequency.value = f; osc.detune.value = det;
-      lp.type = 'lowpass'; lp.frequency.value = cutoff;
-      gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(0.028 * v, t + Math.min(1, d / 3)); gn.gain.setValueAtTime(0.028 * v, t + d * 0.7); gn.gain.linearRampToValueAtTime(0.0001, t + d);
-      osc.connect(lp).connect(gn).connect(music); osc.start(t); osc.stop(t + d + 0.1);
+  // ---------- drums ----------
+  const kicks: number[] = [];
+  const kick = (t: number, v = 1, big = false) => {
+    const osc = ctx.createOscillator(), gn = ctx.createGain();
+    osc.frequency.setValueAtTime(big ? 190 : 160, t); osc.frequency.exponentialRampToValueAtTime(big ? 36 : 45, t + (big ? 0.12 : 0.085));
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(v, t + 0.002); gn.gain.exponentialRampToValueAtTime(0.0001, t + (big ? 1.3 : 0.45));
+    osc.connect(gn).connect(drums); osc.start(t); osc.stop(t + 1.4);
+    noise(drums, t, 0.35 * v, 0.008, { type: 'highpass', f: 2800 });
+    kicks.push(t);
+  };
+  const snare = (t: number, v = 1) => {
+    tone(snareBus, t, 195, 'triangle', 0.45 * v, 0.09, { to: 160 });
+    noise(snareBus, t, 0.6 * v, 0.2, { f: 1800, q: 0.7 });
+    noise(snareBus, t, 0.28 * v, 0.07, { type: 'highpass', f: 6500 });
+    for (const d of [0.006, 0.014]) noise(snareBus, t + d, 0.22 * v, 0.02, { f: 1300, q: 1.6 });
+  };
+  const clap = (t: number, v = 1) => { for (const d of [0, 0.01, 0.021]) noise(snareBus, t + d, 0.38 * v, d > 0.02 ? 0.16 : 0.018, { f: 1400, q: 1.3 }); };
+  const rim = (t: number, v = 1) => { tone(snareBus, t, 1700, 'triangle', 0.25 * v, 0.03); noise(snareBus, t, 0.2 * v, 0.02, { f: 3000, q: 3 }); };
+  // hats: six detuned square waves (the 808 recipe) through a gate, so each hit is one automation step
+  const hatHits: [number, number, number][] = [];
+  const hat = (t: number, v = 1, open = false) => hatHits.push([t, v, open ? 0.32 : 0.045]);
+  const shakerHits: [number, number][] = [];
+  const shaker = (t: number, v = 1) => shakerHits.push([t, v]);
+
+  // ---------- bass, keys, lead ----------
+  const bass = (t: number, f: number, dur: number, v = 1, glideTo?: number) => {
+    const osc = ctx.createOscillator(), gn = ctx.createGain(), drive = ctx.createWaveShaper(), lp = ctx.createBiquadFilter();
+    const c = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 127.5 - 1; c[i] = Math.tanh(2.2 * x); } drive.curve = c;
+    lp.type = 'lowpass'; lp.frequency.value = 700;
+    osc.frequency.setValueAtTime(f * 1.5, t); osc.frequency.exponentialRampToValueAtTime(f, t + 0.035);
+    if (glideTo) { osc.frequency.setValueAtTime(f, t + Math.max(0.04, dur - 0.14)); osc.frequency.exponentialRampToValueAtTime(glideTo, t + dur); }
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(0.55 * v, t + 0.006);
+    gn.gain.setValueAtTime(0.55 * v, t + Math.max(0.01, dur - 0.06)); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+    osc.connect(gn); gn.connect(bassBus); gn.connect(drive).connect(lp).connect(gain(0.25, bassBus));
+    osc.start(t); osc.stop(t + dur + 0.1);
+  };
+  // electric piano: two-operator FM with a bright attack that mellows, plus a tine ping
+  const trem = ctx.createOscillator(); trem.frequency.value = 4.6; const tremAmt = gain(0.12); trem.connect(tremAmt); trem.start(0); trem.stop(LEN);
+  const keysTrem = gain(0.88, keys); tremAmt.connect(keysTrem.gain);
+  const ep = (t: number, f: number, dur: number, v = 1, pan = 0) => {
+    const car = ctx.createOscillator(), mod = ctx.createOscillator(), tine = ctx.createOscillator();
+    const mg = ctx.createGain(), tg = ctx.createGain(), amp = ctx.createGain(), pn = ctx.createStereoPanner();
+    car.frequency.value = f; mod.frequency.value = f; tine.frequency.value = f * 14;
+    mg.gain.setValueAtTime(f * 2.6, t); mg.gain.exponentialRampToValueAtTime(f * 0.35, t + 0.7);
+    tg.gain.setValueAtTime(f * 0.9, t); tg.gain.exponentialRampToValueAtTime(1, t + 0.06);
+    mod.connect(mg).connect(car.frequency); tine.connect(tg).connect(car.frequency);
+    amp.gain.setValueAtTime(0.0001, t); amp.gain.linearRampToValueAtTime(0.11 * v, t + 0.004);
+    amp.gain.exponentialRampToValueAtTime(0.05 * v, t + 0.9); amp.gain.setValueAtTime(0.05 * v, t + Math.max(0.9, dur));
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.9, dur) + 0.4);
+    pn.pan.value = pan;
+    car.connect(amp).connect(pn).connect(keysTrem);
+    const end = t + Math.max(0.9, dur) + 0.45;
+    for (const o3 of [car, mod, tine]) { o3.start(t); o3.stop(end); }
+  };
+  const chord = (t: number, fs: number[], dur: number, v = 1) => fs.forEach((f, i) => ep(t + i * 0.009, f, dur, v * (i === 0 ? 1.1 : 0.85), (i / (fs.length - 1) - 0.5) * 1.3));
+  const whistle = (t: number, f: number, dur: number, v = 1) => {
+    const osc = ctx.createOscillator(), vib = ctx.createOscillator(), vg = ctx.createGain(), amp = ctx.createGain();
+    osc.frequency.setValueAtTime(f * 0.965, t); osc.frequency.exponentialRampToValueAtTime(f, t + 0.05);
+    vib.frequency.value = 5.6; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.013, t + Math.min(0.25, dur));
+    vib.connect(vg).connect(osc.frequency);
+    amp.gain.setValueAtTime(0.0001, t); amp.gain.linearRampToValueAtTime(0.16 * v, t + 0.03);
+    amp.gain.setValueAtTime(0.16 * v, t + Math.max(0.04, dur - 0.05)); amp.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.09);
+    osc.connect(amp).connect(lead);
+    osc.start(t); vib.start(t); osc.stop(t + dur + 0.12); vib.stop(t + dur + 0.12);
+    noise(lead, t, 0.02 * v, dur, { f: f * 2, q: 9, a: 0.03 }); // breath
+  };
+  const mallet = (t: number, f: number, v = 1) => {
+    const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), amp = ctx.createGain();
+    car.frequency.value = f; mod.frequency.value = f * 3.99;
+    mg.gain.setValueAtTime(f * 1.8, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.12);
+    mod.connect(mg).connect(car.frequency);
+    env(amp.gain, t, 0.002, 0.14 * v, 0.55);
+    car.connect(amp).connect(lead);
+    car.start(t); mod.start(t); car.stop(t + 0.7); mod.stop(t + 0.7);
+  };
+
+  // ---------- crowd, cymbals, risers ----------
+  const crowd = (t0: number, t1: number, level: number, endLevel = level) => {
+    const src = noiseSrc(t0, t1 - t0), out = gain(0);
+    for (const [f, q, v] of [[420, 2.2, 1], [1150, 3, 0.8], [2500, 4, 0.45]] as const) {
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; src.connect(bp).connect(gain(v, out));
     }
-  });
-  const crash = (t: number, v = 1) => { noise(music, t, 0.32 * v, 2.2, { type: 'highpass', f: 4200 }); noise(music, t, 0.15 * v, 1.2, { f: 9000, q: 0.6 }); };
-  const riser = (t: number, d: number) => {
-    const src = ctx.createBufferSource(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
-    src.buffer = noiseBuf; src.loop = true; flt.type = 'bandpass'; flt.Q.value = 2.5;
-    flt.frequency.setValueAtTime(300, t); flt.frequency.exponentialRampToValueAtTime(7000, t + d);
-    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.3, t + d); gn.gain.linearRampToValueAtTime(0.0001, t + d + 0.02);
-    src.connect(flt).connect(gn).connect(music); src.start(t); src.stop(t + d + 0.05);
-    tone(music, t, 110, 'sawtooth', 0.06, d, { to: 880, a: d * 0.9, lp: 1800 });
+    out.connect(crowdBus);
+    out.gain.setValueAtTime(0.0001, t0);
+    const r2 = prng(Math.round(t0 * 100));
+    for (let t = t0; t < t1; t += 0.12 + r2() * 0.15) {
+      const k = (t - t0) / Math.max(0.01, t1 - t0), base = lerp(level, endLevel, k);
+      out.gain.linearRampToValueAtTime(base * (0.7 + r2() * 0.5), t);
+    }
+    out.gain.linearRampToValueAtTime(0.0001, t1 + 0.4);
   };
-  const swell = (t: number, d: number) => {
-    const src = ctx.createBufferSource(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
-    src.buffer = noiseBuf; src.loop = true; flt.type = 'highpass'; flt.frequency.value = 2500;
-    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.35, t + d); gn.gain.linearRampToValueAtTime(0.0001, t + d + 0.01);
-    src.connect(flt).connect(gn).connect(music); src.start(t); src.stop(t + d + 0.05);
+  const roar = (t: number) => {
+    crowd(t, t + 4.5, 0.9, 0.15);
+    const r2 = prng(5150);
+    for (let i = 0; i < 7; i++) { const s0 = t + 0.05 + r2() * 0.6, f = 700 + r2() * 500; tone(crowdBus, s0, f, 'sine', 0.025, 0.7, { to: f * 1.45, a: 0.25, pan: r2() - 0.5 }); }
+    // applause: a dense rain of tiny claps that thins out
+    for (let s0 = t + 0.3; s0 < t + 5; s0 += 0.006 + Math.pow((s0 - t) / 5, 2) * 0.05) noise(crowdBus, s0, 0.05 + r2() * 0.05, 0.012, { f: 1500 + r2() * 1500, q: 2, pan: r2() * 1.6 - 0.8 });
+  };
+  const crash = (t: number, v = 1) => { noise(drums, t, 0.28 * v, 2.4, { type: 'highpass', f: 4500 }); noise(drums, t, 0.14 * v, 1.3, { f: 9000, q: 0.6 }); };
+  const riser = (t: number, d: number, v = 1) => {
+    const src = noiseSrc(t, d), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
+    flt.type = 'bandpass'; flt.Q.value = 2.2; flt.frequency.setValueAtTime(300, t); flt.frequency.exponentialRampToValueAtTime(8000, t + d);
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22 * v, t + d); gn.gain.linearRampToValueAtTime(0.0001, t + d + 0.02);
+    src.connect(flt).connect(gn).connect(fxBus);
+  };
+  const reverseCrash = (t: number, d: number, v = 1) => {
+    const src = noiseSrc(t, d), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
+    flt.type = 'highpass'; flt.frequency.value = 3000;
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.3 * v, t + d); gn.gain.linearRampToValueAtTime(0.0001, t + d + 0.01);
+    src.connect(flt).connect(gn).connect(fxBus); send(gn, 0.4);
+  };
+  const squeak = (t: number, v = 1) => {
+    const osc = ctx.createOscillator(), fm = ctx.createOscillator(), fg = gain(260), amp = ctx.createGain(), bp = ctx.createBiquadFilter();
+    osc.frequency.setValueAtTime(1900, t); osc.frequency.linearRampToValueAtTime(2700, t + 0.11);
+    fm.frequency.value = 31; fm.connect(fg).connect(osc.frequency);
+    bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 2;
+    env(amp.gain, t, 0.01, 0.12 * v, 0.12);
+    osc.connect(bp).connect(amp).connect(fxBus);
+    osc.start(t); fm.start(t); osc.stop(t + 0.2); fm.stop(t + 0.2);
   };
 
-  // custom effects
-  const X: Record<string, (t: number, ...a: unknown[]) => void> = {
-    scratch: (t, d) => {
-      const dur = d as number, src = ctx.createBufferSource(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
-      src.buffer = noiseBuf; src.loop = true; flt.type = 'bandpass'; flt.frequency.value = 3200; flt.Q.value = 1.1;
-      gn.gain.setValueAtTime(0.0001, t);
-      const r = prng(Math.round(t * 1000));
-      for (let s = t; s < t + dur; s += 0.045 + r() * 0.05) { gn.gain.linearRampToValueAtTime(0.05 + r() * 0.17, s + 0.012); gn.gain.linearRampToValueAtTime(0.01, s + 0.04); }
-      gn.gain.linearRampToValueAtTime(0.0001, t + dur + 0.05);
-      src.connect(flt).connect(gn).connect(fxBus); src.start(t); src.stop(t + dur + 0.1);
-    },
-    stamp: (t) => { tone(fxBus, t, 115, 'sine', 0.75, 0.16, { to: 48 }); noise(fxBus, t, 0.45, 0.06, { type: 'lowpass', f: 1300 }); noise(fxBus, t, 0.14, 0.03, { type: 'highpass', f: 2500 }); },
-    slam: (t) => { tone(fxBus, t, 90, 'sine', 0.9, 0.3, { to: 38 }); noise(fxBus, t, 0.55, 0.12, { type: 'lowpass', f: 900 }); noise(fxBus, t, 0.2, 0.25, { f: 3000, q: 0.5 }); },
-    whoosh: (t) => noise(fxBus, t, 0.32, 0.42, { f: 350, to: 3600, q: 1.6, a: 0.12 }),
-    hit: (t) => { tone(fxBus, t, 70, 'sine', 0.7, 0.5, { to: 35 }); noise(fxBus, t, 0.25, 0.9, { type: 'highpass', f: 3500 }); },
-    pop: (t, i) => { const scale = [659.25, 783.99, 987.77, 1174.66, 1318.51, 1567.98]; const f = scale[(i as number) % 6]; tone(fxBus, t, f, 'triangle', 0.16, 0.3); tone(fxBus, t, f * 2, 'sine', 0.05, 0.25); noise(fxBus, t, 0.12, 0.04, { type: 'lowpass', f: 1000 }); },
-    shutter: (t) => { noise(fxBus, t, 0.28, 0.025, { type: 'highpass', f: 3000 }); noise(fxBus, t + 0.04, 0.2, 0.02, { type: 'highpass', f: 2200 }); tone(fxBus, t, 1800, 'square', 0.03, 0.01); },
-    tick: (t) => { tone(fxBus, t, 2100, 'triangle', 0.22, 0.03); tone(fxBus, t + 0.25, 1500, 'triangle', 0.12, 0.03); },
-    heart: (t) => { tone(fxBus, t, 60, 'sine', 0.7, 0.18, { to: 40 }); tone(fxBus, t + 0.17, 55, 'sine', 0.45, 0.2, { to: 38 }); },
-    cut: (t) => { noise(fxBus, t, 0.35, 0.05, { type: 'lowpass', f: 2000 }); tone(fxBus, t, 95, 'sine', 0.5, 0.12, { to: 50 }); },
-    land: (t) => { tone(fxBus, t, 120, 'sine', 0.6, 0.15, { to: 55 }); noise(fxBus, t, 0.2, 0.04, { type: 'lowpass', f: 900 }); },
+  // ---------- the arrangement (beats) ----------
+  const N5: Record<string, number> = { A4: 440, B4: 493.88, D5: 587.33, E5: 659.25, 'F#5': 739.99, G5: 783.99, A5: 880, B5: 987.77 };
+  const CH = [
+    [164.81, 246.94, 293.66, 369.99, 392.0], // Em9
+    [130.81, 196.0, 246.94, 293.66, 329.63], // Cmaj9
+    [196.0, 246.94, 293.66, 329.63, 440.0], // G6/9
+    [185.0, 220.0, 293.66, 329.63], // D/F#
+  ];
+  const ROOT = [41.2, 65.41, 49.0, 46.25]; // E1 C2 G1 F#1 for the 808
+  const HOOK_A: [number, string, number][] = [[0, 'E5', 0.5], [0.5, 'G5', 0.5], [1, 'A5', 0.75], [1.75, 'G5', 0.25], [2, 'E5', 0.5], [2.5, 'D5', 0.5], [3, 'B4', 1], [4, 'E5', 0.5], [4.5, 'G5', 0.5], [5, 'B5', 0.75], [5.75, 'A5', 0.25], [6, 'G5', 0.5], [6.5, 'F#5', 0.5], [7, 'E5', 1]];
+  const HOOK_B: [number, string, number][] = [[0, 'D5', 0.5], [0.5, 'E5', 0.5], [1, 'G5', 1], [2, 'A5', 0.5], [2.5, 'G5', 0.25], [2.75, 'E5', 0.25], [3, 'D5', 1], [4, 'B4', 0.5], [4.5, 'D5', 0.5], [5, 'E5', 0.75], [5.75, 'D5', 0.25], [6, 'B4', 0.5], [6.5, 'A4', 0.5], [7, 'B4', 1]];
+  const hook = (b0: number, ph: [number, string, number][], inst: 'whistle' | 'mallet' | 'both', v = 1, from = 0, to = 8) => {
+    for (const [o3, n, d] of ph) {
+      if (o3 < from || o3 >= to) continue;
+      if (inst !== 'mallet') whistle(at(b0 + o3), N5[n], bt(d) * 0.92, v);
+      if (inst !== 'whistle') mallet(at(b0 + o3), N5[n] * (inst === 'both' ? 2 : 1), v * (inst === 'both' ? 0.5 : 1));
+    }
   };
+  const keysBar = (b0: number, ci: number, v = 1) => { chord(at(b0), CH[ci], bt(1.6), v); chord(at(b0 + 1.75), CH[ci], bt(0.5), v * 0.6); chord(at(b0 + 2.5), CH[ci], bt(1.4), v * 0.85); };
+  const sw = 0.055; // swing
 
-  // ---- the arrangement (beats) ----
-  const at = (b: number) => bt(b);
-  const E = [82.41, 65.41, 98.0, 73.42]; // E2 C2 G2 D2
-  const CH = [[164.81, 196, 246.94, 293.66], [130.81, 164.81, 196, 246.94], [196, 246.94, 293.66, 329.63], [146.83, 220, 293.66, 369.99]];
-  const sw = 0.06; // swing on the off-beats
-  // vinyl crackle under everything: soft hiss plus random clicks
-  {
-    const src = ctx.createBufferSource(), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
-    src.buffer = noiseBuf; src.loop = true; flt.type = 'bandpass'; flt.frequency.value = 3000; flt.Q.value = 0.4; gn.gain.value = 0.012;
-    src.connect(flt).connect(gn).connect(music); src.start(0); src.stop(bt(BEATS));
-    const r = prng(5);
-    for (let t = 0.1; t < bt(BEATS); t += 0.02 + r() * 0.18) noise(music, t, 0.03 + r() * 0.08, 0.004, { type: 'highpass', f: 2000 });
+  // keys filter: closed in the intro, opens for the groove, darkens for the break
+  const lp = keysLP.frequency;
+  lp.setValueAtTime(380, 0); lp.exponentialRampToValueAtTime(5200, at(16));
+  lp.setValueAtTime(5200, at(40)); lp.exponentialRampToValueAtTime(2400, at(41)); lp.setValueAtTime(2400, at(47.5)); lp.exponentialRampToValueAtTime(5200, at(48));
+  lp.setValueAtTime(5200, at(56)); lp.exponentialRampToValueAtTime(1400, at(58)); lp.exponentialRampToValueAtTime(7000, at(64));
+  lp.setValueAtTime(600, at(64)); lp.setValueAtTime(600, at(69.8)); lp.setValueAtTime(7000, at(70));
+
+  // 0–8: keys alone, then a soft pulse
+  for (let bar = 0; bar < 2; bar++) keysBar(bar * 4, 0, 0.9);
+  for (let b = 4; b < 8; b++) { kick(at(b), 0.35); shaker(at(b + 0.5 + sw), 0.7); }
+  bass(at(4), ROOT[0], bt(4), 0.5);
+  // 8–16: the title, half-time, every letter a hit
+  keysBar(8, 0); keysBar(12, 1);
+  for (const b of [8, 10, 12, 14]) kick(at(b), 0.8);
+  for (const b of [9, 11, 13]) snare(at(b), 0.55);
+  for (let b = 8; b < 15; b += 0.5) hat(at(b + (b % 1 ? sw : 0)), 0.55);
+  bass(at(8), ROOT[0], bt(3.8), 0.8); bass(at(12), ROOT[1], bt(2.9), 0.8, ROOT[0]);
+  for (let i = 0; i < 8; i++) snare(at(15 + i * 0.125), 0.25 + i * 0.06);
+  riser(at(14), bt(2), 0.8); reverseCrash(at(15), bt(1));
+  // 16–40: the groove and the hook
+  for (let bar = 0; bar < 6; bar++) {
+    const b0 = 16 + bar * 4, ci = bar % 4, nci = (bar + 1) % 4;
+    keysBar(b0, ci);
+    for (const k of [0, 0.75, 2.5]) kick(at(b0 + k));
+    if (bar % 2) kick(at(b0 + 3.25), 0.7);
+    bass(at(b0), ROOT[ci], bt(0.7)); bass(at(b0 + 0.75), ROOT[ci], bt(1.6)); bass(at(b0 + 2.5), ROOT[ci], bt(1.45), 1, ROOT[nci]);
+    snare(at(b0 + 1)); snare(at(b0 + 3)); snare(at(b0 + 3.75), 0.2);
+    for (let e = 0; e < 8; e++) hat(at(b0 + e * 0.5 + (e % 2 ? sw : 0)), e % 2 ? 0.65 : 1, e === 3 && bar % 2 === 1);
+    hat(at(b0 + 3.75), 0.5);
+    for (let s16 = 1; s16 < 16; s16 += 2) shaker(at(b0 + s16 / 4), 0.45);
   }
-  // 0–8 intro: a pad, then a soft pulse
-  pad(at(0), bt(8.5), CH[0], 0.9, 600);
-  for (let b = 4; b < 8; b++) { kick(at(b), 0.45); hat(at(b + 0.5 + sw), 0.6); }
-  // 8–16 title
-  for (let b = 8; b < 16; b++) { hat(at(b + 0.5 + sw), 0.7); if (b % 2 === 0) kick(at(b), 0.7); else snare(at(b), 0.6); }
-  for (let b = 12; b < 16; b++) bass(at(b), E[0], 0.4, 0.7);
-  pad(at(8), bt(8), CH[0], 0.7, 900);
-  // 16–56 the groove: ten bars of boom-bap
-  for (let bar = 0; bar < 10; bar++) {
-    const b0 = 16 + bar * 4, ci = bar % 4;
-    for (const k of [0, 0.75, 2.5]) { kick(at(b0 + k)); bass(at(b0 + k), E[ci], k === 2.5 ? 0.6 : 0.35); }
-    bass(at(b0 + 3.5), E[ci] * 1.5, 0.2, 0.7);
-    snare(at(b0 + 1)); snare(at(b0 + 3)); snare(at(b0 + 3.75), 0.25);
-    for (let e = 0; e < 8; e++) hat(at(b0 + e * 0.5 + (e % 2 ? sw : 0)), e % 2 ? 0.7 : 1, e === 7);
-    pluck(at(b0), CH[ci]); pluck(at(b0 + 2.5), CH[ci], 0.7);
-    // a chord bed under every bar, brighter while the six modes pop in
-    pad(at(b0), bt(4) + 0.05, CH[ci], bar === 6 || bar === 7 ? 1.1 : 0.85, bar === 6 || bar === 7 ? 1500 : 1000);
-    for (let s16 = 0; s16 < 16; s16++) if (s16 % 4) noise(music, at(b0 + s16 / 4 + (s16 % 2 ? sw / 2 : 0)), 0.035, 0.03, { type: 'bandpass', f: 6000, q: 1.5, pan: -0.3 });
+  crash(at(16)); crash(at(24), 0.6); crash(at(32), 0.6);
+  hook(16, HOOK_A, 'whistle'); hook(24, HOOK_B, 'whistle'); hook(32, HOOK_A, 'both');
+  // 40–48: breakdown for the six cards; the hook on mallets, rim clicks, no kick
+  keysBar(40, 0, 0.8); keysBar(44, 2, 0.8);
+  bass(at(40), ROOT[0], bt(3.9), 0.6); bass(at(44), ROOT[2], bt(3.9), 0.6);
+  for (let b = 40; b < 48; b++) { rim(at(b), b % 2 ? 0.7 : 0.4); shaker(at(b + 0.5 + sw), 0.8); }
+  hook(40, HOOK_A, 'mallet', 0.8);
+  // 48–56: the groove back, then stop-time for H-O-R-S-E (the slams are the beat), back in at 54
+  crash(at(48), 0.7);
+  for (const [b0, ci] of [[48, 0], [54, 2]] as [number, number][]) {
+    const bars = b0 === 48 ? 0.875 : 0.5; // 48–51.5 and 54–56
+    keysBar(b0, ci);
+    for (let k = 0; k < bars * 4; k += 0.5) hat(at(b0 + k + ((k * 2) % 2 ? sw : 0)), (k * 2) % 2 ? 0.65 : 1);
+    for (const k of [0, 0.75, 2.5]) if (k < bars * 4) { kick(at(b0 + k)); bass(at(b0 + k), ROOT[ci], bt(0.7)); }
+    for (const k of [1, 3]) if (k < bars * 4) snare(at(b0 + k));
   }
-  // 56–64 build
+  for (let i = 0; i < 5; i++) { const t = at(51.5 + i * 0.5); kick(t, 1); bass(t, [41.2, 49.0, 55.0, 61.74, 82.41][i], bt(0.45), 1); snare(t, 0.6); }
+  crash(at(54), 0.7); squeak(at(53.9));
+  // 56–64: the build: four on the floor, claps, 808 pumping octaves, a riser and a roll
   for (let b = 56; b < 64; b++) {
     kick(at(b), b < 62 ? 0.9 : 1);
     if (b % 2 === 1) clap(at(b));
-    bass(at(b), E[0], 0.2); bass(at(b + 0.5), E[0] * 2, 0.15, 0.6);
+    bass(at(b), ROOT[0], bt(0.45)); bass(at(b + 0.5), ROOT[0] * 2, bt(0.4), 0.7);
     const div = b < 60 ? 2 : 4;
-    for (let s2 = 0; s2 < div; s2++) hat(at(b + s2 / div), 0.8);
+    for (let k = 0; k < div; k++) hat(at(b + k / div), 0.75 + (b - 56) * 0.04);
   }
-  pluck(at(56), CH[0]); pluck(at(58), CH[1]); pluck(at(60), CH[2]); pluck(at(62), CH[3]);
-  riser(at(60), bt(4));
-  for (let s2 = 0; s2 < 8; s2++) snare(at(62 + s2 * 0.25), 0.3 + s2 * 0.05);
-  for (let s2 = 0; s2 < 8; s2++) snare(at(63 + s2 * 0.125), 0.5 + s2 * 0.05);
-  // 64–70 the break: heartbeat and clock (cued), a held low note, then a swell into the shot
-  pad(at(64), bt(6), [82.41, 123.47], 0.8, 380);
-  swell(at(69), bt(1));
-  // 70–72 the drop
-  kick(at(70), 1, true); crash(at(70)); pluck(at(70), CH[0], 1.4); bass(at(70), E[0], 0.9);
-  for (let b = 70; b < 72; b++) { if (b > 70) kick(at(b)); snare(at(b + 1)); for (let s2 = 0; s2 < 4; s2++) hat(at(b + s2 * 0.25), 0.9, s2 === 2); }
-  kick(at(70.75)); kick(at(71.5));
-  // 72–80 outro
-  kick(at(72), 0.9); crash(at(72), 0.6);
-  pad(at(72), bt(8), [164.81, 246.94, 293.66, 369.99, 493.88], 0.9, 1400);
-  bass(at(72), E[0], 2.5, 0.8);
-  [659.25, 587.33, 493.88, 392.0, 493.88].forEach((f, i) => { tone(music, at(73 + i), f, 'triangle', 0.09, 0.9, { lp: 3000 }); tone(music, at(73 + i), f * 2, 'sine', 0.03, 0.7); });
-  tone(music, at(78), 1318.51, 'sine', 0.06, 2.5);
+  keysBar(56, 0); keysBar(60, 3);
+  riser(at(60), bt(4)); crowd(at(60), at(64), 0.15, 0.45);
+  for (let i = 0; i < 8; i++) snare(at(62 + i * 0.25), 0.3 + i * 0.05);
+  for (let i = 0; i < 8; i++) snare(at(63 + i * 0.125), 0.6 + i * 0.05);
+  // 64–70: the break: the drums stop; a held chord, the crowd holding its breath (heartbeat and clock are cued)
+  chord(at(64), CH[0], bt(5.7), 0.8);
+  bass(at(64), ROOT[0], bt(5.7), 0.45);
+  crowd(at(64), at(69.6), 0.45, 0.2);
+  reverseCrash(at(69), bt(0.9), 1.2);
+  // 70–72: the drop
+  kick(at(70), 1.1, true); crash(at(70), 1.2); roar(at(70));
+  bass(at(70), ROOT[0], bt(1.9), 1.1);
+  chord(at(70), CH[0], bt(1.6), 1.2); chord(at(71.5), CH[1], bt(0.5), 0.9);
+  kick(at(70.75)); kick(at(71.5)); snare(at(71)); clap(at(71));
+  for (let k = 0; k < 8; k++) hat(at(70 + k * 0.25), 0.9, k === 2);
+  hook(70, HOOK_A, 'both', 1, 0, 4);
+  // 72–80: the outro: the hook's answer on its own, a last chord, the crowd fading
+  crash(at(72), 0.6); kick(at(72), 0.9);
+  chord(at(72), CH[0], bt(3.8), 0.9); chord(at(76), CH[1], bt(1.8), 0.8); chord(at(78), CH[0], bt(2.5), 0.9);
+  bass(at(72), ROOT[0], bt(3.8), 0.8); bass(at(76), ROOT[1], bt(1.9), 0.7, ROOT[0]); bass(at(78), ROOT[0], bt(2.2), 0.7);
+  hook(72, HOOK_B, 'whistle', 0.9, 4, 8);
+  mallet(at(78), N5.E5 * 2, 0.6); mallet(at(78.5), N5.B5, 0.4);
+  for (const [b, v] of [[74, 0.5], [76, 0.45], [78, 0.4]] as [number, number][]) kick(at(b), v);
+  // vinyl crackle under everything
+  {
+    const src = noiseSrc(0, LEN), flt = ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.value = 3000; flt.Q.value = 0.4;
+    src.connect(flt).connect(gain(0.008, mixIn));
+    const r2 = prng(5);
+    for (let t = 0.1; t < bt(BEATS); t += 0.03 + r2() * 0.2) noise(mixIn, t, 0.02 + r2() * 0.05, 0.004, { type: 'highpass', f: 2000 });
+  }
+  // crowd ambience in the gym scenes
+  crowd(at(22), at(28), 0.12); crowd(at(48), at(56), 0.14);
 
-  // game sounds and cues
-  sfxOffline.attach(ctx, gameBus, 0.75);
+  // gates for the hats and shaker, and the sidechain duck, scheduled in time order
+  {
+    const metal = gain(1); const bp = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 10000; bp.Q.value = 0.8; hp.type = 'highpass'; hp.frequency.value = 7000;
+    for (const f of [205.3, 304.4, 369.6, 522.7, 540, 800]) { const o3 = ctx.createOscillator(); o3.type = 'square'; o3.frequency.value = f * 1.0; o3.connect(metal); o3.start(0); o3.stop(LEN); }
+    const hn = noiseSrc(0, LEN); hn.connect(gain(0.3, metal));
+    const gate = gain(0); const pan = ctx.createStereoPanner(); pan.pan.value = 0.35;
+    metal.connect(bp).connect(hp).connect(gate).connect(pan).connect(gain(0.16, drums));
+    hatHits.sort((x, y) => x[0] - y[0]);
+    for (const [t, v, dec] of hatHits) { gate.gain.setValueAtTime(v * (0.85 + rnd() * 0.3), t); gate.gain.setTargetAtTime(0, t + 0.001, dec / 3); }
+    const sh = noiseSrc(0, LEN), sbp = ctx.createBiquadFilter(); sbp.type = 'bandpass'; sbp.frequency.value = 7000; sbp.Q.value = 1.2;
+    const sgate = gain(0); const span = ctx.createStereoPanner(); span.pan.value = -0.5;
+    sh.connect(sbp).connect(sgate).connect(span).connect(gain(0.1, drums));
+    shakerHits.sort((x, y) => x[0] - y[0]);
+    for (const [t, v] of shakerHits) { sgate.gain.setValueAtTime(0, t); sgate.gain.linearRampToValueAtTime(v, t + 0.012); sgate.gain.setTargetAtTime(0, t + 0.013, 0.02); }
+    kicks.sort((x, y) => x - y);
+    for (const t of kicks) { duck.gain.setTargetAtTime(0.45, t, 0.003); duck.gain.setTargetAtTime(1, t + 0.05, 0.07); }
+  }
+
+  // ---------- cued sound effects ----------
+  const X: Record<string, (t: number, ...a: unknown[]) => void> = {
+    scratch: (t, d) => {
+      const dur = d as number, src = noiseSrc(t, dur), flt = ctx.createBiquadFilter(), gn = ctx.createGain();
+      flt.type = 'bandpass'; flt.frequency.value = 3200; flt.Q.value = 1.1;
+      gn.gain.setValueAtTime(0.0001, t);
+      const r2 = prng(Math.round(t * 1000));
+      for (let s0 = t; s0 < t + dur; s0 += 0.045 + r2() * 0.05) { gn.gain.linearRampToValueAtTime(0.05 + r2() * 0.15, s0 + 0.012); gn.gain.linearRampToValueAtTime(0.01, s0 + 0.04); }
+      gn.gain.linearRampToValueAtTime(0.0001, t + dur + 0.05);
+      src.connect(flt).connect(gn).connect(fxBus);
+    },
+    stamp: (t) => { tone(fxBus, t, 120, 'sine', 0.6, 0.15, { to: 50 }); noise(fxBus, t, 0.4, 0.05, { type: 'lowpass', f: 1300 }); noise(fxBus, t, 0.12, 0.03, { type: 'highpass', f: 2500 }); },
+    slam: (t) => { noise(fxBus, t, 0.45, 0.14, { type: 'lowpass', f: 900 }); noise(fxBus, t, 0.2, 0.3, { f: 3000, q: 0.5 }); },
+    whoosh: (t) => noise(fxBus, t, 0.28, 0.42, { f: 350, to: 3600, q: 1.6, a: 0.12 }),
+    hit: (t) => { tone(fxBus, t, 70, 'sine', 0.5, 0.5, { to: 35 }); noise(fxBus, t, 0.18, 0.9, { type: 'highpass', f: 3500 }); },
+    pop: (t, i) => { const sc = [659.25, 783.99, 987.77, 1174.66, 1318.51, 1567.98]; mallet(t, sc[(i as number) % 6], 0.9); noise(fxBus, t, 0.1, 0.03, { type: 'lowpass', f: 1000 }); },
+    shutter: (t) => { noise(fxBus, t, 0.22, 0.025, { type: 'highpass', f: 3000 }); noise(fxBus, t + 0.04, 0.16, 0.02, { type: 'highpass', f: 2200 }); },
+    tick: (t) => { tone(fxBus, t, 2100, 'triangle', 0.2, 0.03); tone(fxBus, t + 0.25, 1500, 'triangle', 0.1, 0.03); },
+    heart: (t) => { tone(fxBus, t, 58, 'sine', 0.75, 0.2, { to: 40 }); tone(fxBus, t + 0.17, 54, 'sine', 0.5, 0.22, { to: 38 }); },
+    land: (t) => { tone(fxBus, t, 120, 'sine', 0.5, 0.15, { to: 55 }); noise(fxBus, t, 0.18, 0.04, { type: 'lowpass', f: 900 }); },
+    cut: (t) => { noise(fxBus, t - 0.08, 0.22, 0.2, { f: 600, to: 4000, q: 1.2, a: 0.06 }); squeak(t + 0.02, 0.8); },
+    squeak: (t) => squeak(t),
+  };
+
+  sfxOffline.attach(ctx, gameBus, 0.7);
   for (const e of evs) {
     if (e.name.startsWith('x:')) { X[e.name.slice(2)]?.(e.t, ...e.args); continue; }
     const f = real[e.name];
