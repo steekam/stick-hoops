@@ -27,8 +27,8 @@ Build-time environment variables (set on the Pages project, production and previ
   and not just a canvas.
 - `public/robots.txt` allows everything and points to `public/sitemap.xml` (one URL).
 - `public/404.html` is served for unknown paths with a real 404 status, instead of the game.
-- Google Search Console: add `hoops.steekam.me` as a domain property (it verifies through the
-  Cloudflare DNS record Google asks for) and submit `https://hoops.steekam.me/sitemap.xml`.
+- Google Search Console: `steekam.me` is a verified domain property (a TXT record on the zone;
+  keep it), so it covers `hoops.steekam.me`. The sitemap is submitted there.
 
 ### Caching and offline
 
