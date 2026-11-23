@@ -48,9 +48,8 @@ const INK = '#121211', PAPER = '#fbfbf8', ACCENT = '#d9581a', BALL = '#f0883e', 
 const MONO = '"DejaVu Sans Mono", "Liberation Mono", monospace';
 const DISPLAY = 'Anton, Impact, sans-serif';
 
-const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const smooth = (t: number) => { t = clamp(t); return t * t * (3 - 2 * t); };
+// Camera maths shared with the game's own camera (src/render/camera.ts).
+import { clamp, clampFocus, expK, lerp, smooth } from '../src/render/camera';
 const backOut = (t: number) => { const c = 1.9; t = clamp(t) - 1; return t * t * ((c + 1) * t + c) + 1; };
 const cubicOut = (t: number) => 1 - Math.pow(1 - clamp(t), 3);
 
@@ -235,9 +234,8 @@ let shakeX = 0, shakeY = 0, shakeR = 0;
 /** Transform for world units (960×540) under a camera. */
 function worldT(cam: Cam): void {
   // Never look past the edge of the court: keep the view inside the 960×540 world.
-  const hw = 480 / cam.z, hh = 270 / cam.z;
-  const fxc = clamp(cam.fx, hw, 960 - hw), fyc = clamp(cam.fy, hh, 540 - hh);
-  cam = { ...cam, fx: cam.z >= 1 ? fxc : 480, fy: cam.z >= 1 ? fyc : 270 };
+  const f = clampFocus(cam.fx, cam.fy, cam.z);
+  cam = { ...cam, fx: f.fx, fy: f.fy };
   o.setTransform(1, 0, 0, 1, 0, 0);
   o.translate(W / 2 + shakeX, H / 2 + shakeY);
   o.rotate((cam.rot ?? 0) + shakeR);
@@ -251,7 +249,7 @@ let camState: Cam | null = null;
 const snapCamera = () => { camState = null; };
 function easeCam(target: Cam, rate = 7): Cam {
   if (!camState) { camState = { ...target }; return camState; }
-  const k = 1 - Math.exp(-rate / FPS);
+  const k = expK(rate, 1 / FPS);
   camState = { z: lerp(camState.z, target.z, k), fx: lerp(camState.fx, target.fx, k), fy: lerp(camState.fy, target.fy, k), rot: lerp(camState.rot ?? 0, target.rot ?? 0, k) };
   return camState;
 }

@@ -10,6 +10,8 @@ import { drawCourtLines } from './court';
 import { drawBackdrop, drawBackdropLive, drawScoreboard, floorFill } from './backdrops/index';
 import { settings, type Backdrop } from '../settings';
 import { makeWorld } from '../sim/world';
+import { apply, clamp, toWorld, type View } from './camera';
+import { EXTENT, FULL, fixedDirector, followDirector, followWanted, type Director } from './director';
 
 const FONT = 'ui-monospace, Menlo, Consolas, monospace';
 
@@ -43,10 +45,22 @@ export class Renderer {
   private gusts = Array.from({ length: 16 }, () => ({ x: Math.random() * W, y: 40 + Math.random() * (FLOOR - 120), l: 10 + Math.random() * 24 }));
   private dribHit = false;
   /** Paper confetti for a new personal best. */
-  private bits: { x: number; y: number; vx: number; vy: number; a: number; va: number; w: number; c: number; t: number }[] = [];
+  private bits: { x: number; y: number; vx: number; vy: number; a: number; va: number; w: number; c: number; t: number; k: number }[] = [];
   /** The court never moves, so it is drawn once into this layer and copied each frame. */
   private bg: HTMLCanvasElement | null = null;
   private bgKey = '';
+  /** The follow camera's court: painted in world space over EXTENT, then blitted through the view. */
+  private bgF: HTMLCanvasElement | null = null;
+  private bgFKey = '';
+  private readonly fixedDir: Director = fixedDirector();
+  private readonly followDir: Director = followDirector();
+  private dir: Director = this.fixedDir;
+  /** The world rectangle on screen right now (FULL unless the follow camera is on). */
+  view: View = FULL;
+  /** World units per CSS pixel, floored at 1: text and dots drawn in world units stay legible when zoomed out. */
+  private u = 1;
+  /** Fade of the thumb-pad hint (follow camera only). */
+  private padA = 0;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!;
@@ -60,11 +74,13 @@ export class Renderer {
     resize();
   }
 
-  /** Screen point → world units. */
+  /** Screen point → world units, through whatever the camera shows right now. */
   toWorld(clientX: number, clientY: number): { x: number; y: number } {
-    const r = this.canvas.getBoundingClientRect();
-    return { x: ((clientX - r.left) / r.width) * W, y: ((clientY - r.top) / r.height) * H };
+    return toWorld(this.view, this.canvas.getBoundingClientRect(), clientX, clientY);
   }
+
+  /** True while the upright-phone follow camera is in charge. */
+  get following(): boolean { return this.dir.kind === 'follow'; }
 
   /** Floating text. Default alignment is centred; 'right' anchors the text's right edge at x. */
   pop(txt: string, x: number, y: number, align: CanvasTextAlign = 'center'): void {
@@ -77,23 +93,25 @@ export class Renderer {
   /** Burst of paper scraps from both top corners. Skipped when the player asks for less motion. */
   confetti(): void {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const v = this.view, k = this.u; // from the corners of what is on screen, scaled so the speed looks the same
     for (let i = 0; i < 90; i++) {
       const left = i % 2 === 0;
       this.bits.push({
-        x: left ? -10 : W + 10, y: 40 + Math.random() * 120,
-        vx: (left ? 1 : -1) * (180 + Math.random() * 420), vy: -260 - Math.random() * 260,
-        a: Math.random() * 6, va: (Math.random() - 0.5) * 16, w: 5 + Math.random() * 6, c: i % 4, t: 0,
+        x: left ? v.x - 10 * k : v.x + v.w + 10 * k, y: v.y + (40 + Math.random() * 120) * k,
+        vx: (left ? 1 : -1) * (180 + Math.random() * 420) * k, vy: (-260 - Math.random() * 260) * k,
+        a: Math.random() * 6, va: (Math.random() - 0.5) * 16, w: (5 + Math.random() * 6) * k, c: i % 4, t: 0, k,
       });
     }
   }
 
   update(dt: number, g: Game): void {
+    this.steer(dt, g);
     const h = hoopGeom(g.world, g.tick);
     this.hoopPos = { x: h.x, y: h.y };
     this.net = Math.max(0, this.net - dt * 1.6);
     for (const p of this.pops) p.t += dt;
-    for (const b of this.bits) { b.t += dt; b.vy += 520 * dt; b.vx *= 1 - 1.6 * dt; b.vy = Math.min(b.vy, 140); b.x += b.vx * dt + Math.sin(b.t * 5 + b.a) * 30 * dt; b.y += b.vy * dt; b.a += b.va * dt; }
-    if (this.bits.length) this.bits = this.bits.filter((b) => b.y < H + 20 && b.t < 6);
+    for (const b of this.bits) { b.t += dt; b.vy += 520 * b.k * dt; b.vx *= 1 - 1.6 * dt; b.vy = Math.min(b.vy, 140 * b.k); b.x += b.vx * dt + Math.sin(b.t * 5 + b.a) * 30 * b.k * dt; b.y += b.vy * dt; b.a += b.va * dt; }
+    if (this.bits.length) this.bits = this.bits.filter((b) => b.y < this.view.y + this.view.h + 20 && b.t < 6);
     this.pops = this.pops.filter((p) => p.t < 1.2);
     for (const s of this.gusts) { s.x += g.world.wind * dt * 0.9; if (s.x > W + 40) s.x = -40; if (s.x < -40) s.x = W + 40; }
     // The bird on the backboard flies off when a shot comes close, then comes back.
@@ -112,23 +130,37 @@ export class Renderer {
     }
   }
 
+  /** Let the director pick this frame's view. Runs with the game clock, so a paused game holds still. */
+  private steer(dt: number, g: Game): void {
+    const want = followWanted() ? this.followDir : this.fixedDir;
+    if (want !== this.dir) { this.dir = want; want.snap(); }
+    const cw = this.canvas.clientWidth, ch = this.canvas.clientHeight;
+    this.dir.update(g, dt, cw, ch);
+    this.view = this.dir.kind === 'follow' ? this.dir.view : FULL;
+    this.u = this.following && cw > 0 ? clamp(this.view.w / cw, 1, 2) : 1;
+    // The pad hint shows only while a shot can be started.
+    const showPad = this.following && g.canShoot() && !g.aim && !g.ball;
+    this.padA = Math.max(0, Math.min(1, this.padA + (showPad ? dt * 2 : -dt * 4)));
+  }
+
   draw(g: Game): void {
     const { ctx, pen, canvas } = this;
     pen.frame(g.time);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(this.court(), 0, 0);
-    ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    const follow = this.following, u = this.u;
+    if (follow) this.blitCourtF(this.view);
+    else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(this.court(), 0, 0); }
+    apply(ctx, this.view, canvas);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     const h = hoopGeom(g.world, g.tick);
     const st = settings();
     drawBackdropLive(ctx, st.backdrop, pen.c, g.time);
-    if (st.scoreboard) {
+    if (st.scoreboard && !follow) { // upright phones show the score in the page's HUD instead
       const hud = g.mode?.hud(g);
       drawScoreboard(ctx, pen.c, hud ? { big: hud.right, small: hud.mid, label: hud.left } : { big: '00', small: '', label: 'Stick Hoops' });
     }
-    this.drawWind(g);
+    this.drawWind(g, !follow);
     this.drawShadows(g, h);
     this.drawHoopBack(g, h);
     this.drawWall(g);
@@ -148,13 +180,38 @@ export class Renderer {
     if (g.showHint && !g.aim && !g.ball) this.drawHint(g);
     for (const p of this.pops) {
       ctx.globalAlpha = 1 - p.t / 1.2;
-      ctx.fillStyle = pen.c.ink; ctx.font = '800 22px ' + FONT;
+      ctx.fillStyle = pen.c.ink; ctx.font = `800 ${22 * u}px ` + FONT;
       ctx.textAlign = p.align; ctx.textBaseline = 'alphabetic';
-      ctx.fillText(p.txt, Math.max(8, p.x), p.y - p.t * 50);
+      ctx.fillText(p.txt, Math.max(8, p.x), p.y - p.t * 50 * u);
       ctx.textAlign = 'left';
     }
     ctx.globalAlpha = 1;
     if (this.bits.length) this.drawConfetti();
+    if (follow) this.drawScreenSpace(g);
+  }
+
+  /** Marks that belong to the screen, not the court: the wind readout and the thumb-pad hint. */
+  private drawScreenSpace(g: Game): void {
+    const { ctx, pen, canvas } = this, k = canvas.width / Math.max(1, canvas.clientWidth);
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    this.drawWindHud(g);
+    if (this.padA <= 0.01) return;
+    const cw = canvas.clientWidth, ch = canvas.clientHeight, v = this.view;
+    const y0 = (FLOOR + 50 - v.y) * (ch / v.h); // below the floor's front edge
+    const padH = ch - y0;
+    if (padH < 70) return;
+    const cx = cw / 2, cy = y0 + padH * 0.5, r = Math.min(padH * 0.3, cw * 0.22);
+    ctx.save();
+    ctx.globalAlpha = 0.55 * this.padA;
+    ctx.strokeStyle = pen.c.mute; ctx.fillStyle = pen.c.mute; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+    ctx.setLineDash([3, 7]);
+    // A faint arc under the text: the pull goes down and back, away from the hoop.
+    ctx.beginPath(); ctx.arc(cx, cy - r * 0.2, r, Math.PI * 0.12, Math.PI * 0.88); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '600 11px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('PULL BACK HERE', cx, cy - r * 0.2);
+    ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   private drawConfetti(): void {
@@ -187,6 +244,33 @@ export class Renderer {
     return bg;
   }
 
+  /** Copy the part of the follow court that `view` shows. Past the painted extent is plain paper (the pad). */
+  private blitCourtF(view: View): void {
+    const { ctx, canvas, pen } = this;
+    const bg = this.courtF(), res = bg.width / EXTENT.w;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = pen.c.paper; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const x0 = Math.max(view.x, EXTENT.x), x1 = Math.min(view.x + view.w, EXTENT.x + EXTENT.w);
+    const y0 = Math.max(view.y, EXTENT.y), y1 = Math.min(view.y + view.h, EXTENT.y + EXTENT.h);
+    if (x1 <= x0 || y1 <= y0) return;
+    const sx = canvas.width / view.w, sy = canvas.height / view.h;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(bg, (x0 - EXTENT.x) * res, (y0 - EXTENT.y) * res, (x1 - x0) * res, (y1 - y0) * res,
+      (x0 - view.x) * sx, (y0 - view.y) * sy, (x1 - x0) * sx, (y1 - y0) * sy);
+  }
+
+  private courtF(): HTMLCanvasElement {
+    const c = this.pen.c;
+    const key = `${c.paper}|${c.ink}|${c.mute}|${c.faint}|${c.accent}|${c.wood}|${c.paint}|${settings().backdrop}`;
+    if (this.bgF && key === this.bgFKey) return this.bgF;
+    const res = Math.sqrt(2.5e6 / (EXTENT.w * EXTENT.h)); // about 2.5M pixels: 4M was measurably slower to blit in software rendering
+    const bg = this.bgF ?? document.createElement('canvas');
+    bg.width = Math.round(EXTENT.w * res); bg.height = Math.round(EXTENT.h * res);
+    this.paintCourt(bg, settings().backdrop, EXTENT);
+    this.bgF = bg; this.bgFKey = key;
+    return bg;
+  }
+
   /**
    * A small picture of a backdrop with the hoop in place, for the Look picker. Uses the same
    * drawing as the game, so what you pick is exactly what you get.
@@ -197,7 +281,7 @@ export class Renderer {
     cv.width = Math.round(width * d); cv.height = Math.round((width * H) / W * d);
     this.paintCourt(cv, backdrop);
     const x = cv.getContext('2d')!;
-    x.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+    apply(x, FULL, cv);
     x.lineCap = 'round'; x.lineJoin = 'round';
     const saved = this.ctx;
     (this as unknown as { ctx: CanvasRenderingContext2D }).ctx = x;
@@ -209,12 +293,13 @@ export class Renderer {
     return cv;
   }
 
-  private paintCourt(bg: HTMLCanvasElement, backdrop: Backdrop): void {
+  /** `ext` is the world rectangle the layer covers: the court (FULL) unless it is the follow camera's wider one. */
+  private paintCourt(bg: HTMLCanvasElement, backdrop: Backdrop, ext?: View): void {
     const { pen } = this, c = pen.c;
     const x = bg.getContext('2d')!;
     x.setTransform(1, 0, 0, 1, 0, 0);
     x.fillStyle = c.paper; x.fillRect(0, 0, bg.width, bg.height);
-    x.setTransform(bg.width / W, 0, 0, bg.height / H, 0, 0);
+    apply(x, ext ?? FULL, bg);
     x.lineCap = 'round'; x.lineJoin = 'round';
 
     // Paper grain: a few hundred faint short strokes, fixed so they never flicker.
@@ -224,9 +309,20 @@ export class Renderer {
     x.beginPath();
     for (let i = 0; i < 420; i++) { const px = rnd() * W, py = rnd() * H, a = rnd() * 0.6 - 0.3; x.moveTo(px, py); x.lineTo(px + Math.cos(a) * 5, py + Math.sin(a) * 5); }
     x.stroke();
+    if (ext) { // more paper grain outside the court, at the same density
+      let s2 = 99;
+      const r2 = () => ((s2 = (s2 * 16807) % 2147483647) / 2147483647);
+      x.beginPath();
+      for (let i = 0, n = Math.round((420 * ext.w * ext.h) / (W * H)); i < n; i++) {
+        const px = ext.x + r2() * ext.w, py = ext.y + r2() * ext.h, a = r2() * 0.6 - 0.3;
+        if (px >= 0 && px <= W && py >= 0 && py <= H) continue;
+        x.moveTo(px, py); x.lineTo(px + Math.cos(a) * 5, py + Math.sin(a) * 5);
+      }
+      x.stroke();
+    }
     x.globalAlpha = 1;
 
-    drawBackdrop(x, backdrop, c);
+    drawBackdrop(x, backdrop, c, ext);
 
     // The floor: a plane seen from above, with a thick front edge like a stage.
     const A = proj(-260, FLOOR, Z_FRONT), B = proj(W + 120, FLOOR, Z_FRONT);
@@ -405,12 +501,19 @@ export class Renderer {
 
   // ---------- overlays ----------
 
-  private drawWind(g: Game): void {
+  private drawWind(g: Game, hud: boolean): void {
     const wind = g.world.wind; if (!wind) return;
     const { pen, ctx } = this;
     ctx.strokeStyle = pen.c.mute; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.6;
     for (const s of this.gusts) pen.seg({ x: s.x, y: s.y }, { x: s.x - Math.sign(wind) * s.l, y: s.y });
     ctx.globalAlpha = 1;
+    if (hud) this.drawWindHud(g);
+  }
+
+  /** The WIND readout. On the follow camera it is drawn in screen space, so it stays in the corner. */
+  private drawWindHud(g: Game): void {
+    const wind = g.world.wind; if (!wind) return;
+    const { pen, ctx } = this;
     const L = Math.min(Math.abs(wind) / 3, 80), sgn = Math.sign(wind), cx = 86, cy = 32;
     ctx.strokeStyle = pen.c.ink; ctx.fillStyle = pen.c.ink; ctx.lineWidth = 2.5;
     ctx.font = '600 12px ' + FONT; ctx.textBaseline = 'middle';
@@ -423,11 +526,11 @@ export class Renderer {
 
   private drawAim(g: Game): void {
     const aim = g.aim; if (!aim) return;
-    const { pen, ctx } = this, v = aim.v, m = Math.hypot(v.x, v.y);
+    const { pen, ctx, u } = this, v = aim.v, m = Math.hypot(v.x, v.y);
     if (m < 20) return;
     const pw = g.aimPower(), p = releasePoint(g.player.x, pw);
     if (aim.src === 'ptr' && aim.sx != null) {
-      ctx.strokeStyle = pen.c.mute; ctx.lineWidth = 1.6; ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = pen.c.mute; ctx.lineWidth = 1.6 * u; ctx.setLineDash([4 * u, 6 * u]);
       ctx.beginPath(); ctx.moveTo(aim.sx, aim.sy!); ctx.lineTo(aim.cx!, aim.cy!); ctx.stroke(); ctx.setLineDash([]);
     }
     const n = g.mode?.aimDots(g) ?? 0;
@@ -437,25 +540,31 @@ export class Renderer {
     for (let i = 1; i <= n * 2; i++) {
       vx += g.world.wind * dt; vy += G * dt; x += vx * dt; y += vy * dt;
       if (y > FLOOR) break;
-      if (i % 2 === 0) { ctx.globalAlpha = Math.max(0.15, 1 - i / (n * 2.2)); ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill(); }
+      if (i % 2 === 0) { ctx.globalAlpha = Math.max(0.15, 1 - i / (n * 2.2)); ctx.beginPath(); ctx.arc(x, y, 2.6 * u, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.globalAlpha = 1;
     // Power gauge: a pencil-drawn tube that fills with hatching.
     const gx = g.player.x - 46, gy = FLOOR - 150;
+    ctx.save();
+    if (u !== 1) { ctx.translate(gx + 5, gy + 80); ctx.scale(u, u); ctx.translate(-gx - 5, -gy - 80); } // zoomed out: keep it readable
     ctx.strokeStyle = pen.c.ink; ctx.lineWidth = 2; ctx.strokeRect(gx, gy, 10, 80);
     ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.rect(gx, gy + 80 * (1 - pw), 10, 80 * pw);
     hatch(ctx, { x: gx, y: gy + 80 * (1 - pw), w: 10, h: 80 * pw }, 2.4, -Math.PI / 4);
+    ctx.restore();
   }
 
   private drawHint(g: Game): void {
-    const { pen, ctx } = this;
-    ctx.fillStyle = pen.c.ink; ctx.font = '600 13px ' + FONT; ctx.textBaseline = 'alphabetic';
+    const { pen, ctx, u } = this;
+    ctx.save();
     const tx = Math.max(20, g.player.x - 150), ty = FLOOR - 230;
+    if (u !== 1) { ctx.translate(tx, ty); ctx.scale(u, u); ctx.translate(-tx, -ty); }
+    ctx.fillStyle = pen.c.ink; ctx.font = '600 13px ' + FONT; ctx.textBaseline = 'alphabetic';
     ctx.fillText('PRESS, PULL BACK, LET GO', tx, ty);
     ctx.strokeStyle = pen.c.ink; ctx.lineWidth = 2;
     const ax = tx + 90, ay = ty + 14;
     pen.seg({ x: ax, y: ay }, { x: ax - 40, y: ay + 40 }); pen.seg({ x: ax - 40, y: ay + 40 }, { x: ax - 30, y: ay + 40 }); pen.seg({ x: ax - 40, y: ay + 40 }, { x: ax - 40, y: ay + 30 });
+    ctx.restore();
   }
 
   private drawBird(): void {

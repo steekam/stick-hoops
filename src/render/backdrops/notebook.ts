@@ -112,3 +112,20 @@ export function drawNotebookLive(ctx: Ctx, c: Colors, time: number): void {
   }
   ctx.restore();
 }
+
+/** The page carries on past the court: ruling and margin lines out to the edges and up into the sky. */
+export function drawNotebookExt(ctx: Ctx, c: Colors, ext: { x: number; y: number; w: number; h: number }): void {
+  const base = WALL_BASE, x0 = ext.x, x1 = ext.x + ext.w;
+  ctx.save();
+  ctx.strokeStyle = c.paint; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.9;
+  for (let y = 46 - 24; y > ext.y; y -= 24) { path(ctx, [{ x: x0, y }, { x: x1, y: y + 0.4 }]); ctx.stroke(); }
+  for (let y = 46; y < base; y += 24) {
+    path(ctx, [{ x: x0, y }, { x: 0, y }]); ctx.stroke();
+    path(ctx, [{ x: W, y: y + 0.4 }, { x: x1, y: y + 0.4 }]); ctx.stroke();
+  }
+  ctx.strokeStyle = c.accent; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.4;
+  path(ctx, [{ x: 72, y: ext.y }, { x: 72, y: 0 }]); ctx.stroke();
+  ctx.globalAlpha = 0.35; ctx.lineWidth = 0.9;
+  path(ctx, [{ x: 77, y: ext.y }, { x: 77, y: 0 }]); ctx.stroke();
+  ctx.restore();
+}
