@@ -119,6 +119,7 @@ function pause(): void {
   paused = true;
   game.inputEnabled = false;
   game.aim = null;
+  game.renderer.clearPops();
   sfx.pause(true);
   game.showOverlay('Paused', `${current.name}. The clock is stopped.`, [
     { label: 'Resume', action: resume },

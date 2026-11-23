@@ -91,7 +91,7 @@ test('60 Seconds: streak multiplier, buzzer, and the best score on the menu', as
   expect(after - before).toBeGreaterThanOrEqual(4);
   await c.advance(61);
   await expect(c.overlay).toBeVisible();
-  expect(await c.overlayTitle()).toBe('Time');
+  expect(await c.overlayTitle()).toBe("Time's up");
   expect(await c.overlayBody()).toContain(`${after} points`);
   expect(await c.overlayBody()).toContain('New best');
   await c.menu();

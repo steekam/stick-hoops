@@ -24,7 +24,7 @@ export function timed(): Mode {
     const joined = parts.join(', ');
     const extra = joined ? ` ${joined[0].toUpperCase()}${joined.slice(1)}.` : '';
     const tail = newBestText(beaten) || ` Best is ${best}.`;
-    g.showOverlay('Time', `${score} point${score === 1 ? '' : 's'}.${extra}${tail}`, [{ label: 'Play again', action: () => g.setMode(timed()) }], {
+    g.showOverlay("Time's up", `${score} point${score === 1 ? '' : 's'}.${extra}${tail}`, [{ label: 'Play again', action: () => g.setMode(timed()) }], {
       best: beaten.includes('score') && score > 0,
       share: `I scored ${score} in 60 Seconds on Stick Hoops.`,
     });

@@ -1,5 +1,6 @@
 import { sfx } from '../audio/sfx';
 import { icon } from './icons';
+import { onSettings, settings } from '../settings';
 import type { GameUi } from '../game/game';
 import type { Hud, OverlayButton, RoundEnd } from '../game/types';
 
@@ -43,6 +44,11 @@ export function createShell(): Shell {
   label();
   for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => sfx.resume(), { capture: true });
 
+  // The scoreboard over the court already shows the score, so the HUD's score slot steps aside.
+  const syncBoard = () => document.body.classList.toggle('sb-on', settings().scoreboard);
+  syncBoard();
+  onSettings(syncBoard);
+
   const shell: Shell = {
     onMenu: () => {},
     showOverlay(title: string, body: string, buttons: OverlayButton[], end?: RoundEnd) {
@@ -79,7 +85,17 @@ export function createShell(): Shell {
     overlayOpen: () => !overlay.hidden,
     setHud(h: Hud) {
       $('hud').hidden = !(h.left || h.mid || h.right);
-      $('hud-l').textContent = h.left;
+      const hl = $('hud-l');
+      hl.replaceChildren();
+      const cut = h.left.indexOf(' · ');
+      if (cut < 0) hl.textContent = h.left;
+      else {
+        hl.append(h.left.slice(0, cut));
+        const sub = document.createElement('span');
+        sub.className = 'hud-sub';
+        sub.textContent = h.left.slice(cut);
+        hl.appendChild(sub);
+      }
       $('hud-m').textContent = h.mid;
       const r = $('hud-r');
       r.textContent = h.right;

@@ -17,7 +17,8 @@
 html, body { height: 100%; margin: 0; }
 body { background: var(--paper); color: var(--ink); font-family: var(--mono); font-size: 14px; }
 button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible, canvas:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+button:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+canvas:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
 
 .app {
   max-width: 1040px; margin: 0 auto; padding-block: 20px 28px;
@@ -32,21 +33,21 @@ h1 { font-family: var(--display); font-weight: 800; letter-spacing: -0.02em; fon
   text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; font-weight: 600;
 }
 /* Quiet header buttons: icon only, no border. Menu and Pause keep the bordered chip. */
-.ibtn { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; background: transparent; border: 0; color: var(--ink); }
+.ibtn { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; background: transparent; border: 0; color: var(--ink); }
 .ibtn .ic { width: 20px; height: 20px; }
 .ibtn:hover { background: var(--faint); }
 .ibtn[aria-pressed="false"] { color: var(--mute); }
 /* Quiet text links that are buttons. */
-.linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); cursor: pointer; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.linkbtn { background: none; border: 0; padding: 8px 0; margin: -8px 0; font: inherit; color: var(--ink); cursor: pointer; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .linkbtn:hover, .site-foot a:hover, .menu-credit a:hover { text-decoration-thickness: 2px; }
 
-.levels { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.levels { width: min(100%, var(--court-max, 100%)); margin-inline: auto; box-sizing: border-box; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .levels span { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); margin-right: 4px; }
 .levels button { width: 32px; height: 32px; border: 2px solid var(--ink); background: transparent; font-weight: 600; font-variant-numeric: tabular-nums; }
 .levels button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .levels button:disabled { border-style: dashed; color: var(--mute); border-color: var(--mute); cursor: not-allowed; }
 
-.hud { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: end; border-bottom: 1px solid var(--faint); padding-bottom: 8px; font-variant-numeric: tabular-nums; }
+.hud { width: min(100%, var(--court-max, 100%)); margin-inline: auto; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: end; border-bottom: 1px solid var(--faint); padding-bottom: 8px; font-variant-numeric: tabular-nums; }
 .hud > * { min-width: 0; }
 #hud-l { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
 #hud-m { font-family: var(--display); font-weight: 800; font-size: 18px; letter-spacing: 0.12em; text-align: center; }
@@ -74,7 +75,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 
 .note { color: var(--mute); font-size: 12px; margin: 0; }
 .site-foot { padding-top: 4px; color: var(--mute); font-size: 12px; letter-spacing: 0.02em; }
-.site-foot a, .menu-credit a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.site-foot a, .menu-credit a { display: inline-block; padding: 8px 0; margin: -8px 0; color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 /* About: a native dialog, so it is in the page for search engines and opens as a modal. It floats, so it may cast the hatch. */
 .about { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(560px, calc(100% - 32px)); max-height: calc(100dvh - 48px); height: fit-content; padding: 0; overflow: visible; isolation: isolate;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); font-size: 13px; line-height: 1.65; }
@@ -94,7 +95,19 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 body.menu-open #brand { visibility: hidden; }
 .hdr-r { margin-left: auto; }
 
-@media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) { .rotate { display: block; } }
+body.sb-on #hud-r { visibility: hidden; }
+@media (pointer: coarse) { .kbd-only { display: none; } }
+@media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) {
+  .rotate { display: block; margin-top: -4px; text-transform: none; letter-spacing: 0.02em; }
+  /* Centre the court group in the leftover height so there is no dead block underneath. */
+  .app { min-height: 100dvh; box-sizing: border-box; }
+  /* The first visible block under the header takes the auto margin; later ones sit tight against it. */
+  .levels, .hud, .tut, .stage { margin-top: auto; }
+  .levels:not([hidden]) ~ :is(.hud, .tut, .stage), .hud:not([hidden]) ~ :is(.tut, .stage), .tut:not([hidden]) ~ .stage { margin-top: 0; }
+  .rotate { margin-bottom: auto; }
+  .court { width: 100%; } /* the page is height-padded here, so width alone sets the court */
+  .levels, .hud { width: 100%; }
+}
 
 /* Narrow screens: icon-only header buttons so the header stays on one line. */
 @media (max-width: 680px) {
@@ -127,7 +140,8 @@ body.menu-open #brand { visibility: hidden; }
 @media (max-width: 520px) {
   #hud-m, #hud-r { font-size: 14px; }
   .hud { gap: 8px; }
-  #hud-l { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hud-l { font-size: 11px; }
+  .hud-sub { display: none; }
   .overlay { padding: 8px; }
   .card { padding: 12px 14px; gap: 8px; box-shadow: 4px 4px 0 var(--ink); }
   .card h2 { font-size: 17px; }
@@ -163,9 +177,11 @@ body.menu-open #brand { visibility: hidden; }
 
 /* Look picker: a panel of live backdrop previews over the court. */
 #look { display: flex; place-items: initial; padding: 0; }
-.look { margin: auto; width: 100%; max-width: 820px; box-sizing: border-box; padding: clamp(12px, 2.5vw, 24px); display: flex; flex-direction: column; gap: 14px; }
+.look { position: relative; margin: auto; width: 100%; max-width: 820px; box-sizing: border-box; padding: clamp(12px, 2vw, 18px) clamp(12px, 2.5vw, 24px); display: flex; flex-direction: column; gap: 10px; }
 .look-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .look-top h2 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(18px, 3vw, 26px); text-transform: uppercase; letter-spacing: 0.04em; }
+#look-done { position: absolute; top: clamp(12px, 2vw, 18px); right: clamp(12px, 2.5vw, 24px); }
+.look-label { margin: 0 0 -4px; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute); }
 .look-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .look-card { display: flex; flex-direction: column; gap: 6px; padding: 6px; background: var(--paper); border: 2px solid var(--ink); text-align: left; }
 .look-pic { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid var(--mute); }
@@ -181,8 +197,11 @@ body.menu-open #brand { visibility: hidden; }
 @media (max-width: 520px) { .look-grid { gap: 8px; } .look-card { padding: 4px; } }
 /* On phones the court is short, so the picker takes the whole screen instead. */
 @media (max-width: 640px) {
-  #look { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #look { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: calc(56px + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .look-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .look { min-height: 100%; }
+  #look-done { position: static; align-self: stretch; justify-content: center; margin-top: auto; }
+  body.look-open header { position: relative; z-index: 21; }
 }
 
 /* Feedback form: a panel over the court, same treatment as the Look picker. */
@@ -199,6 +218,7 @@ body.menu-open #brand { visibility: hidden; }
 .fb textarea:focus-visible, .fb input:focus-visible { outline: 3px dashed var(--ink); outline-offset: 1px; }
 .fb-count { align-self: flex-end; font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; margin-top: -6px; }
 .fb-check { font-size: 12px; color: var(--mute); display: flex; gap: 6px; align-items: baseline; }
+.fb-check input { accent-color: var(--ink); }
 .fb-trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .fb-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .fb-status { margin: 0; font-size: 13px; flex: 1 1 220px; }

@@ -47,18 +47,7 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     for (let x = -10 + (i % 2) * 6; x < W; x += 12) { path(ctx, [{ x, y }, { x: x + 9, y: y + 5 }]); ctx.stroke(); }
   }
 
-  // ---- Light beams from the windows (upper left light), falling down and to the right. ----
-  for (const wx of WINDOWS) {
-    const { w, bot } = WIN;
-    const shift = 120;
-    const beam = [{ x: wx, y: bot }, { x: wx + w, y: bot }, { x: wx + w + shift, y: base + 40 }, { x: wx + shift, y: base + 40 }];
-    ctx.strokeStyle = c.mute; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.09;
-    path(ctx, beam, true); hatch(ctx, { x: wx, y: bot, w: w + shift, h: base + 40 - bot }, 8, -1.0);
-    ctx.globalAlpha = 0.07;
-    path(ctx, beam, true); hatch(ctx, { x: wx, y: bot, w: w + shift, h: base + 40 - bot }, 16, -0.2);
-    line(ctx, c.mute, beam[0], beam[3], 0.8, 0.2);
-    line(ctx, c.mute, beam[1], beam[2], 0.8, 0.2);
-  }
+  // (No window light shafts: they added noise behind the ball.)
 
   // ---- Roof trusses: two chords, Warren diagonals, verticals, rivets, a purlin and a gusset plate. ----
   const topY = 5, botY = 30;
@@ -203,7 +192,7 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     // hanger strings to the lower truss chord
     line(ctx, c.ink, { x: x + 4, y: botY + 4 }, { x: x + 4, y }, 0.8, 0.5);
     line(ctx, c.ink, { x: x + w - 4, y: botY + 4 }, { x: x + w - 4, y }, 0.8, 0.5);
-    ctx.globalAlpha = 0.9; ctx.fillStyle = c.paint; path(ctx, shape, true); ctx.fill();
+    ctx.globalAlpha = 0.35; ctx.fillStyle = c.paint; path(ctx, shape, true); ctx.fill();
     ctx.strokeStyle = c.ink; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.22;
     path(ctx, shape, true); hatch(ctx, { x, y, w, h }, 5, -0.9);
     // heavier fold shadow on the right third
@@ -213,8 +202,8 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     ctx.setLineDash([3, 3]); ctx.globalAlpha = 0.45; ctx.lineWidth = 0.8;
     path(ctx, [{ x: x + 4, y: y + 4 }, { x: x + w - 4, y: y + 4 }, { x: x + w - 4, y: y + h - 14 }, { x: x + w / 2, y: y + h - 22 }, { x: x + 4, y: y + h - 14 }], true); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.strokeStyle = c.ink; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.8; path(ctx, shape, true); ctx.stroke();
-    ctx.fillStyle = c.ink; ctx.globalAlpha = 0.8; ctx.font = `800 ${size}px ui-monospace, Menlo, Consolas, monospace`; ctx.textAlign = 'center';
+    ctx.strokeStyle = c.ink; ctx.globalAlpha = 0.4; ctx.lineWidth = 1.2; path(ctx, shape, true); ctx.stroke();
+    ctx.fillStyle = c.ink; ctx.globalAlpha = 0.4; ctx.font = `800 ${size}px ui-monospace, Menlo, Consolas, monospace`; ctx.textAlign = 'center';
     ctx.fillText(label, x + w / 2, y + h * 0.5 + 4); ctx.textAlign = 'left';
     // pennant stars
     for (let s = 0; s < 3; s++) dot(ctx, c.ink, x + w / 2 - 10 + s * 10, y + 14, 1.5, 0.65);
@@ -225,7 +214,7 @@ export function drawGym(ctx: Ctx, c: Colors): void {
   ctx.globalAlpha = 1;
 }
 
-/** Moving parts: the lamps' subtle glow breathes and a few dust motes drift through the window light. */
+/** Moving parts: the lamps' subtle glow breathes and a few dust motes drift. */
 export function drawGymLive(ctx: Ctx, c: Colors, time: number): void {
   ctx.save();
   ctx.lineCap = 'round';
@@ -238,15 +227,15 @@ export function drawGymLive(ctx: Ctx, c: Colors, time: number): void {
     ctx.globalAlpha = f * 0.6;
     ctx.beginPath(); ctx.arc(lx, LAMP_Y + 20, 32, 0.45, Math.PI - 0.45); ctx.stroke();
   });
-  // Dust motes drifting down-right inside the window beams.
+  // Dust motes drifting down-right from the windows (very faint).
   ctx.fillStyle = c.mute;
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 3; i++) {
     const wx = WINDOWS[i % 3];
     const ph = (time * (0.018 + (i % 5) * 0.004) + i * 0.173) % 1; // 0..1 down the beam
     const y = WIN.bot + ph * (WALL_BASE - WIN.bot);
     const x = wx + 10 + ((i * 37) % 84) + ph * 100 + Math.sin(time * 0.8 + i * 1.9) * 5;
     if (x > 770 && y > 180) continue; // keep the hoop area calm
-    ctx.globalAlpha = 0.28 * Math.sin(ph * Math.PI);
+    ctx.globalAlpha = 0.16 * Math.sin(ph * Math.PI);
     ctx.beginPath(); ctx.arc(x, y, 1.1, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();

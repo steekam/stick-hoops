@@ -30,7 +30,11 @@ export function createLook(renderer: Renderer, onToggle: (open: boolean) => void
     done.className = 'btn';
     done.textContent = 'Done';
     done.onclick = () => { sfx.click(); api.close(); };
-    top.append(h, done);
+    top.append(h);
+
+    const lbl = document.createElement('p');
+    lbl.className = 'look-label';
+    lbl.textContent = 'Backdrop';
 
     const grid = document.createElement('div');
     grid.className = 'look-grid';
@@ -65,7 +69,7 @@ export function createLook(renderer: Renderer, onToggle: (open: boolean) => void
     sb.append(document.createTextNode(st.scoreboard ? 'Scoreboard on' : 'Scoreboard off'));
     sb.onclick = () => { sfx.click(); updateSettings({ scoreboard: !settings().scoreboard }); render(); };
 
-    panel.append(top, grid, sb);
+    panel.append(top, lbl, grid, sb, done);
     root.appendChild(panel);
     (root.querySelector(`#bd-${st.backdrop}`) as HTMLElement | null)?.focus({ preventScroll: true });
   }
@@ -73,8 +77,8 @@ export function createLook(renderer: Renderer, onToggle: (open: boolean) => void
   root.addEventListener('keydown', (e) => { if (e.key === 'Escape') api.close(); });
 
   const api: LookApi = {
-    open() { open = true; root.hidden = false; render(); onToggle(true); },
-    close() { open = false; root.hidden = true; onToggle(false); },
+    open() { open = true; root.hidden = false; document.body.classList.add('look-open'); render(); onToggle(true); },
+    close() { open = false; root.hidden = true; document.body.classList.remove('look-open'); onToggle(false); },
     get isOpen() { return open; },
   };
   return api;

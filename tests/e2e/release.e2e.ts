@@ -72,7 +72,7 @@ test('End of round: a new best gets the stamp, Share and Menu work', async ({ br
   await c.advance(61);
   await c.settle();
   await expect(c.overlay).toBeVisible();
-  expect(await c.overlayTitle()).toBe('Time');
+  expect(await c.overlayTitle()).toBe("Time's up");
   expect(await browser.evaluate(() => document.querySelector('#overlay .card')!.classList.contains('best'))).toBe(true);
   expect(await c.overlayBody()).toMatch(/^\d+ points?\. /);
   const share = browser.locator('#ov-share');
