@@ -27,4 +27,4 @@ npm run build      # the deployable site, in dist/
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 
-MIT licensed.
+Made by [steekam](https://steekam.me). MIT licensed.

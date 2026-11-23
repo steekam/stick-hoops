@@ -109,6 +109,10 @@ export function createMenu(hooks: MenuHooks): MenuApi {
     idea.onclick = () => { sfx.click(); (window as unknown as { openFeedback?: (k: 'idea') => void }).openFeedback?.('idea'); };
     foot.append(how, tut, idea);
     wrap.appendChild(foot);
+    // The page footer hides on short landscape screens to give the court room; the credit lives here then.
+    const credit = el('p', 'menu-credit');
+    credit.innerHTML = 'Made by <a href="https://steekam.me" target="_blank" rel="noopener">steekam</a> · <a href="https://github.com/steekam/stick-hoops" target="_blank" rel="noopener">Source on GitHub</a>';
+    wrap.appendChild(credit);
 
     root.appendChild(wrap);
     root.scrollTop = 0;

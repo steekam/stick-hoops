@@ -164,3 +164,13 @@ test('Sharing and installing: meta tags, manifest and icons are all there', asyn
   expect(files.manifest.name).toBe('Stick Hoops');
   for (const [p, s] of Object.entries(files.status)) expect(s, p).toBe(200);
 });
+
+test('Footer credits steekam and links the source; on short landscape screens the menu carries it', async ({ browser }) => {
+  await open(browser);
+  const links = await browser.evaluate(() => [...document.querySelectorAll('#site-foot a')].map((a) => [a.textContent, a.getAttribute('href'), a.getAttribute('target')]));
+  expect(links).toEqual([['steekam', 'https://steekam.me', '_blank'], ['Source on GitHub', 'https://github.com/steekam/stick-hoops', '_blank']]);
+  await expect(browser.locator('#app-ver')).toHaveText(/^v\d+\.\d+\.\d+$/);
+  await browser.setViewport({ width: 750, height: 342 });
+  await expect(browser.locator('#site-foot')).toBeHidden();
+  await expect(browser.locator('.menu-credit')).toBeVisible();
+});

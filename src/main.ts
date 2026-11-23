@@ -16,6 +16,8 @@ import { sfx } from './audio/sfx';
 document.querySelector('.brand-mark')!.innerHTML = MARK;
 document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon!)));
 
+document.getElementById('app-ver')!.textContent = `v${__APP_VERSION__}`;
+
 const canvas = document.getElementById('court') as HTMLCanvasElement;
 const shell = createShell();
 const game = new Game(canvas, shell);
