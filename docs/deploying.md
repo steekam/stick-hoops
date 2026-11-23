@@ -7,7 +7,8 @@ feedback.
 
 The Pages project `stick-hoops` is connected to this repo:
 
-- A push to `main` builds and deploys **https://stick-hoops.pages.dev**.
+- A push to `main` builds and deploys **https://hoops.steekam.me** (a custom domain on the
+  steekam.me zone; `stick-hoops.pages.dev` serves the same build and redirects to it).
 - Every other branch and pull request gets a preview deployment, with a link commented on the PR.
 - Build command `npm run build`, output `dist`, Node 22. Changes only to `docs/`, `promo/` or
   Markdown files don't trigger a build.
@@ -17,7 +18,17 @@ Build-time environment variables (set on the Pages project, production and previ
 | Variable | Value | Used for |
 | --- | --- | --- |
 | `VITE_FEEDBACK_URL` | `https://stick-hoops-feedback.steekam.workers.dev` | Where the feedback form posts. Without it, the form offers a prefilled GitHub issue link. |
-| `VITE_SITE_URL` | `https://stick-hoops.pages.dev/` (in `.env`) | Share links and the social card's absolute URL. Keep the trailing slash. |
+| `VITE_SITE_URL` | `https://hoops.steekam.me/` (in `.env`) | The canonical URL, share links, the social card and the structured data. Keep the trailing slash. |
+
+### Search
+
+- `index.html` has a canonical URL, Open Graph and Twitter tags (creator `@mauwanyee`), and a
+  JSON-LD `VideoGame` block. Below the game is a short About section, so crawlers see real text
+  and not just a canvas.
+- `public/robots.txt` allows everything and points to `public/sitemap.xml` (one URL).
+- `public/404.html` is served for unknown paths with a real 404 status, instead of the game.
+- Google Search Console: add `hoops.steekam.me` as a domain property (it verifies through the
+  Cloudflare DNS record Google asks for) and submit `https://hoops.steekam.me/sitemap.xml`.
 
 ### Caching and offline
 

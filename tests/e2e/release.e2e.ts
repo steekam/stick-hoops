@@ -174,3 +174,36 @@ test('Footer credits steekam and links the source; on short landscape screens th
   await expect(browser.locator('#site-foot')).toBeHidden();
   await expect(browser.locator('.menu-credit')).toBeVisible();
 });
+
+test('Search: canonical URL, Twitter tags, structured data, robots, sitemap and a 404 page', async ({ browser }) => {
+  await open(browser);
+  const head = await browser.evaluate(() => {
+    const m = (sel: string) => document.querySelector(sel)?.getAttribute('content') ?? null;
+    const ld = document.querySelector('script[type="application/ld+json"]')?.textContent ?? '{}';
+    return {
+      title: document.title,
+      canonical: document.querySelector('link[rel=canonical]')?.getAttribute('href') ?? null,
+      creator: m('meta[name="twitter:creator"]'),
+      twImage: m('meta[name="twitter:image"]'),
+      ld: JSON.parse(ld) as { '@type'?: string; name?: string; url?: string; author?: { url?: string } },
+      about: document.querySelector('.about')?.textContent?.length ?? 0,
+    };
+  });
+  expect(head.title).toMatch(/stick-figure basketball/i);
+  expect(head.canonical).toMatch(/^https:\/\/[^/]+\/$/);
+  expect(head.creator).toBe('@mauwanyee');
+  expect(head.twImage).toBe(`${head.canonical}og.png`);
+  expect(head.ld['@type']).toBe('VideoGame');
+  expect(head.ld.name).toBe('Stick Hoops');
+  expect(head.ld.url).toBe(head.canonical ?? undefined);
+  expect(head.ld.author?.url).toBe('https://steekam.me');
+  expect(head.about).toBeGreaterThan(400);
+  const files = await evaluate<Record<string, [number, string]>>(browser, async () => {
+    const out: Record<string, [number, string]> = {};
+    for (const p of ['robots.txt', 'sitemap.xml', '404.html']) { const r = await fetch(p); out[p] = [r.status, await r.text()]; }
+    return out;
+  });
+  expect(files['robots.txt'][1]).toMatch(/Sitemap: https:\/\/.+\/sitemap\.xml/);
+  expect(files['sitemap.xml'][1]).toContain('<loc>');
+  expect(files['404.html'][1]).toContain('Back to the court');
+});

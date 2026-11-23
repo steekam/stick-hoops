@@ -70,6 +70,14 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .site-foot a, .menu-credit a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; text-decoration-color: var(--accent); }
 .site-foot a:hover, .menu-credit a:hover { color: var(--accent); }
 .site-foot .ver { margin-left: auto; }
+.about { max-width: 1040px; margin: 0 auto; padding-block: 8px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); color: var(--mute); font-size: 13px; line-height: 1.65; }
+.about > * { max-width: 72ch; }
+.about h2 { color: var(--ink); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 8px; padding-top: 24px; border-top: 2px solid var(--ink); max-width: none; }
+.about h3 { color: var(--ink); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; margin: 18px 0 6px; }
+.about p { margin: 0 0 8px; }
+.about ul { margin: 0; padding-left: 18px; }
+.about b { color: var(--ink); }
+.about a { color: var(--ink); text-decoration-color: var(--accent); text-underline-offset: 3px; }
 .menu-credit { display: none; margin: 4px 0 0; color: var(--mute); font-size: 12px; }
 
 @media (pointer: coarse) { .keys { display: none; } }

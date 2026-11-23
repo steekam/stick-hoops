@@ -37,7 +37,7 @@ const fx = prng(7); // effects-only randomness, separate from the game's
 
 // ---------- timing ----------
 const params = new URLSearchParams(location.search);
-const SITE = params.get('site') || 'stick-hoops.pages.dev';
+const SITE = params.get('site') || 'hoops.steekam.me';
 const FPS = Number(params.get('fps') || 60), SPB = 0.5, BEATS = 80;
 const N = Math.round(BEATS * SPB * FPS);
 const W = 1920, H = 1080;

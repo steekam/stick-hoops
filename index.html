@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Stick Hoops</title>
+    <title>Stick Hoops: a free stick-figure basketball game</title>
     <meta name="description" content="A stick-figure basketball game. Pull back, let go, swish. Six modes, including two-player HORSE and Sabotage. Free, no sign-up, plays offline." />
+    <meta name="author" content="steekam" />
+    <link rel="canonical" href="%VITE_SITE_URL%" />
     <meta name="theme-color" content="#fbfbf8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0e0e0d" media="(prefers-color-scheme: dark)" />
     <meta name="color-scheme" content="light dark" />
@@ -13,6 +15,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Stick Hoops" />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Stick Hoops" />
     <meta property="og:title" content="Stick Hoops" />
     <meta property="og:description" content="Pull back, let go, swish. A stick-figure basketball game with six modes." />
@@ -22,6 +25,33 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="A stick figure shoots a basketball at a sketched hoop on a hardwood court." />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@mauwanyee" />
+    <meta name="twitter:title" content="Stick Hoops" />
+    <meta name="twitter:description" content="Pull back, let go, swish. A free stick-figure basketball game with six modes, two-player on one phone." />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og.png" />
+    <meta name="twitter:image:alt" content="A stick figure shoots a basketball at a sketched hoop on a hardwood court." />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Stick Hoops",
+        "url": "%VITE_SITE_URL%",
+        "description": "A stick-figure basketball game. Press on the court, pull back like a slingshot and let go. Six modes, including two-player HORSE and Sabotage on one device. Free, no sign-up, plays offline.",
+        "image": "%VITE_SITE_URL%og.png",
+        "genre": ["Sports", "Casual", "Arcade"],
+        "gamePlatform": ["Web browser", "Android", "iOS"],
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "playMode": ["SinglePlayer", "MultiPlayer"],
+        "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 2 },
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "steekam", "url": "https://steekam.me" },
+        "codeRepository": "https://github.com/steekam/stick-hoops",
+        "license": "https://opensource.org/licenses/MIT"
+      }
+    </script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cg fill=%22none%22 stroke=%22%23121211%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10 40 Q32 31 54 40%22 stroke-width=%223.4%22 stroke=%22%23d9581a%22/%3E%3Ccircle cx=%2232%22 cy=%2227%22 r=%2212%22 stroke-width=%224.4%22 fill=%22%23f0883e%22/%3E%3Cpath d=%22M20.5 27 H43.5 M32 15 V39%22 stroke-width=%222.4%22/%3E%3Cpath d=%22M12 43 L19 58 M32 46 L32 60 M52 43 L45 58 M19 58 Q32 62.5 45 58%22 stroke-width=%222.8%22/%3E%3Cpath d=%22M10 40 Q32 51 54 40%22 stroke-width=%225.2%22 stroke=%22%23d9581a%22/%3E%3C/g%3E%3C/svg%3E" />
     <meta name="claude:viewport-fit-sides" content="cover" />
   </head>
@@ -61,6 +91,22 @@
         <span class="ver" id="app-ver"></span>
       </footer>
     </div>
+    <section class="about" aria-labelledby="about-h">
+      <h2 id="about-h">About Stick Hoops</h2>
+      <p>Stick Hoops is a free basketball game you play in the browser. A stick figure stands on a sketched half court; you press anywhere, pull back like a slingshot and let go. The longer the pull, the harder the shot. Swishes, bank shots and long shots score extra. It works with a mouse, a touch screen or the keyboard, needs no account, and keeps working offline once you've played it.</p>
+      <h3>Six ways to play</h3>
+      <ul>
+        <li><b>Practice</b>: a full aiming guide and no pressure.</li>
+        <li><b>Levels</b>: ten courts with walls, headwinds, tailwinds and a hoop that rides up and down.</li>
+        <li><b>60 Seconds</b>: score as much as you can before the buzzer. Streaks multiply your points.</li>
+        <li><b>Streak</b>: one miss ends it, and the wind keeps rising.</li>
+        <li><b>HORSE</b>: two players on one phone. Miss a shot your rival made and take a letter.</li>
+        <li><b>Sabotage</b>: two players, five shots each. Makes charge power-ups to use against your rival.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p>Press, pull back away from the hoop and release. On a keyboard, the arrow keys set angle and power and Space shoots. Esc or P pauses.</p>
+      <p>Made by <a href="https://steekam.me">steekam</a>. The <a href="https://github.com/steekam/stick-hoops">source code</a> is on GitHub under the MIT licence.</p>
+    </section>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -16,7 +16,7 @@ const { chromium } = require('playwright');
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : def; };
 const outDir = opt('out', 'promo/out');
-const site = opt('site', 'stick-hoops.pages.dev');
+const site = opt('site', 'hoops.steekam.me');
 const url = `${opt('url', 'http://localhost:5174/promo/trailer.html')}?site=${encodeURIComponent(site)}`;
 const stills = opt('stills', '');
 const audioOnly = args.includes('--audio-only'); // re-make the soundtrack, keep video.mp4

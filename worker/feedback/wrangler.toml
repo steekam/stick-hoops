@@ -5,7 +5,7 @@ compatibility_date = "2026-11-01"
 [vars]
 GITHUB_REPO = "steekam/stick-hoops"
 # Where the game is served from. Add your Pages domain and any custom domain.
-ALLOWED_ORIGINS = "https://stick-hoops.pages.dev,http://localhost:5173,http://localhost:4173"
+ALLOWED_ORIGINS = "https://hoops.steekam.me,https://stick-hoops.pages.dev,http://localhost:5173,http://localhost:4173"
 # Live at https://stick-hoops-feedback.steekam.workers.dev
 
 # GITHUB_TOKEN is a secret: set it with `npx wrangler secret put GITHUB_TOKEN`, never here.

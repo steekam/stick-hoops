@@ -3,7 +3,7 @@
 A stick-figure basketball game. Press on the court, pull back like a slingshot, let go.
 Six modes, two of them for two players sharing one phone. Free, no sign-up, plays offline.
 
-**Play: [stick-hoops.pages.dev](https://stick-hoops.pages.dev)**
+**Play: [hoops.steekam.me](https://hoops.steekam.me)**
 
 ![A stick figure's shot drops through the hoop under a comic-book SWISH! burst](public/og.png)
 
