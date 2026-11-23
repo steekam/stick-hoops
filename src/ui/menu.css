@@ -88,12 +88,16 @@ kbd { font-family: var(--mono); font-size: 11px; font-weight: 600; border: 2px s
   #menu { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: calc(52px + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
   body.menu-open header, body.menu-open .hdr-r { position: relative; z-index: 21; }
   .menu { padding: 4px 16px 8px; gap: 8px; max-width: none; }
-  .menu-fig, .menu-tag, .mode-blurb { display: none; }
+  .menu-tag { display: none; }
+  .menu-fig { display: block; width: 28px !important; }
+  .menu-h { font-size: 1.6rem; }
+  .menu-title { gap: 10px; }
+  .mode-blurb { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mode-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
   #grp-duo + .mode-grid, [aria-labelledby="grp-duo"] .mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mode { padding: 8px 10px; gap: 2px; }
-  .menu { min-height: 100%; }
-  .menu-credit { margin-top: auto; }
+  .menu { min-height: 100%; justify-content: space-evenly; gap: 6px; }
+  .menu-credit { margin-top: 0; }
 }
 
 /* Phone portrait: the menu takes the whole screen so every mode is visible. The header (Look, Feedback, Sound) stays reachable above it. */

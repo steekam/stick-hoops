@@ -155,3 +155,27 @@ test('dark theme paints a dark court', async ({ browser }) => {
   const bg = await browser.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe('rgb(14, 14, 13)');
 });
+
+// The footer credit is hidden on phones while a mode is playing (CSS keys off body.playing); the class must follow play and menu.
+test('body.playing tracks play, and the footer credit stays on desktop', async ({ browser }) => {
+  await open(browser);
+  const c = court(browser);
+  const playing = () => browser.evaluate(() => document.body.classList.contains('playing'));
+  expect(await playing()).toBe(false);
+  await c.pick('practice');
+  expect(await playing()).toBe(true);
+  await expect(browser.locator('#site-foot')).toBeVisible();
+  await browser.locator('#btn-menu').click();
+  expect(await playing()).toBe(false);
+});
+
+// Portrait phone: the page group is centred and the footer is gone while playing.
+test('Phone portrait: footer hidden while playing', async ({ browser }) => {
+  await browser.emulateMedia({ colorScheme: 'light' });
+  await browser.setViewport({ width: 390, height: 844 });
+  await open(browser);
+  const c = court(browser);
+  await c.pick('practice');
+  expect(await browser.evaluate(() => document.body.classList.contains('playing'))).toBe(true);
+  expect(await browser.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

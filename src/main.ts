@@ -72,6 +72,7 @@ function play(entry: ModeEntry): void {
   paused = false;
   current = entry;
   menu.hide();
+  document.body.classList.add('playing');
   menuBtn.hidden = false;
   pauseBtn.hidden = false;
   levelBar.hidden = entry.id !== 'levels';
@@ -83,6 +84,7 @@ function play(entry: ModeEntry): void {
 function toMenu(howTo = false): void {
   paused = false;
   current = null;
+  document.body.classList.remove('playing');
   pauseBtn.hidden = true;
   game.inputEnabled = true;
   game.mode?.stop?.(game);
@@ -98,6 +100,7 @@ function toMenu(howTo = false): void {
 function startTutorial(): void {
   paused = false;
   current = null;
+  document.body.classList.add('playing');
   pauseBtn.hidden = true;
   menu.hide();
   menuBtn.hidden = false;
