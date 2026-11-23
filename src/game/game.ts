@@ -7,7 +7,7 @@ import {
 } from '../sim/shot';
 import { makeWorld, World } from '../sim/world';
 import { Renderer } from '../render/renderer';
-import type { FigState, Hud, Mode, OverlayButton } from './types';
+import type { FigState, Hud, Mode, OverlayButton, RoundEnd } from './types';
 
 export interface Aim {
   v: { x: number; y: number };
@@ -28,7 +28,7 @@ export interface Shooter {
 
 /** Hooks the UI layer gives the game. */
 export interface GameUi {
-  showOverlay(title: string, body: string, buttons: OverlayButton[]): void;
+  showOverlay(title: string, body: string, buttons: OverlayButton[], end?: RoundEnd): void;
   hideOverlay(): void;
   overlayOpen(): boolean;
   setHud(h: Hud): void;
@@ -98,9 +98,10 @@ export class Game {
     if (instant) this.player.x = x;
   }
 
-  showOverlay(title: string, body: string, buttons: OverlayButton[]): void {
+  showOverlay(title: string, body: string, buttons: OverlayButton[], end?: RoundEnd): void {
     this.aim = null;
-    this.ui.showOverlay(title, body, buttons);
+    if (end?.best) { this.renderer.confetti(); sfx.fanfare(); }
+    this.ui.showOverlay(title, body, buttons, end);
   }
 
   /** Floating text. By default it ends just left of the backboard so long labels never cross it. */

@@ -4,6 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Stick Hoops</title>
+    <meta name="description" content="A pencil-sketch basketball game. Pull back, let go, swish. Six modes, including two-player HORSE and Sabotage. Free, no sign-up, plays offline." />
+    <meta name="theme-color" content="#fbfbf8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e0d" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Stick Hoops" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Stick Hoops" />
+    <meta property="og:title" content="Stick Hoops" />
+    <meta property="og:description" content="Pull back, let go, swish. A pencil-sketch basketball game with six modes." />
+    <meta property="og:url" content="%VITE_SITE_URL%" />
+    <meta property="og:image" content="%VITE_SITE_URL%og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A stick figure shoots a basketball at a sketched hoop on a hardwood court." />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cg fill=%22none%22 stroke=%22%23121211%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10 40 Q32 31 54 40%22 stroke-width=%223.4%22 stroke=%22%23d9581a%22/%3E%3Ccircle cx=%2232%22 cy=%2227%22 r=%2212%22 stroke-width=%224.4%22 fill=%22%23f0883e%22/%3E%3Cpath d=%22M20.5 27 H43.5 M32 15 V39%22 stroke-width=%222.4%22/%3E%3Cpath d=%22M12 43 L19 58 M32 46 L32 60 M52 43 L45 58 M19 58 Q32 62.5 45 58%22 stroke-width=%222.8%22/%3E%3Cpath d=%22M10 40 Q32 51 54 40%22 stroke-width=%225.2%22 stroke=%22%23d9581a%22/%3E%3C/g%3E%3C/svg%3E" />
     <meta name="claude:viewport-fit-sides" content="cover" />
   </head>
@@ -15,16 +33,17 @@
       <header>
         <h1 id="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Stick Hoops</span></h1>
         <div class="hdr-r">
-          <button id="btn-menu" class="chip" data-icon="menu" hidden>Menu</button>
-          <button id="btn-look" class="chip" data-icon="look">Look</button>
-          <button id="btn-feedback" class="chip" data-icon="feedback">Feedback</button>
+          <button id="btn-menu" class="chip" data-icon="menu" aria-label="Menu" hidden><span class="lbl">Menu</span></button>
+          <button id="btn-pause" class="chip" data-icon="pause" aria-label="Pause" aria-keyshortcuts="Escape P" hidden><span class="lbl">Pause</span></button>
+          <button id="btn-look" class="chip" data-icon="look" aria-label="Look"><span class="lbl">Look</span></button>
+          <button id="btn-feedback" class="chip" data-icon="feedback" aria-label="Feedback"><span class="lbl">Feedback</span></button>
           <button id="btn-sound" class="chip" aria-pressed="true">Sound on</button>
         </div>
       </header>
       <div id="levels" class="levels" hidden></div>
       <div class="hud" id="hud" hidden><div id="hud-l"></div><div id="hud-m"></div><div id="hud-r"></div></div>
       <div class="tut" id="tutorial" role="region" aria-label="Tutorial" hidden></div>
-      <div class="court">
+      <div class="stage"><div class="court">
         <canvas id="court" tabindex="0" aria-label="Basketball court. Press, pull back and release to shoot, or use the arrow keys and space."></canvas>
         <div class="overlay" id="overlay" hidden>
           <div class="card"><h2 id="ov-title"></h2><p id="ov-body"></p><div class="btns" id="ov-btns"></div></div>
@@ -32,8 +51,10 @@
         <div class="screen" id="menu" hidden></div>
         <div class="screen" id="look" role="dialog" aria-label="Look" hidden></div>
         <div class="screen" id="feedback" role="dialog" aria-labelledby="fb-title" hidden></div>
-      </div>
-      <p class="help" id="help">Press anywhere on the court, pull back away from the hoop and let go. A longer pull shoots harder. Keys: ←→ angle, ↑↓ power, space to shoot.</p>
+      </div></div>
+      <p class="rotate" id="rotate">Turn your phone sideways for a bigger court.</p>
+      <p class="help" id="help">Press anywhere on the court, pull back away from the hoop and let go. A longer pull shoots harder.<span class="keys"> Keys: ←→ angle, ↑↓ power, space to shoot, Esc to pause.</span></p>
+      <noscript><p class="help">Stick Hoops needs JavaScript to run.</p></noscript>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

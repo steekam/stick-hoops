@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>Stick Hoops trailer</title>
+    <style>
+      html, body { margin: 0; background: #111; }
+      /* The game draws into #game (kept laid out so it has a size); #out is the finished frame. */
+      #game { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; visibility: hidden; }
+      #out { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute"><filter id="pencil"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="4" /><feDisplacementMap in="SourceGraphic" scale="1.2" /></filter></svg>
+    <canvas id="game"></canvas>
+    <canvas id="out" width="1920" height="1080"></canvas>
+    <script type="module" src="./trailer.ts"></script>
+  </body>
+</html>

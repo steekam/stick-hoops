@@ -51,3 +51,11 @@ export interface OverlayButton {
   /** Secondary buttons render as outlines. Default primary. */
   secondary?: boolean;
 }
+
+/** Extras for an end-of-round card: a Menu button is always added; Share when `share` is set. */
+export interface RoundEnd {
+  /** One line to share, e.g. "I scored 23 in 60 Seconds on Stick Hoops." */
+  share?: string;
+  /** A personal best was beaten: confetti and a fanfare. */
+  best?: boolean;
+}

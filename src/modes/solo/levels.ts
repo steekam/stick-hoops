@@ -75,14 +75,17 @@ export function levels(startAt = unlockedLevel(), onLevelChange?: (i: number) =>
         sfx.clear();
         if (n >= LEVELS.length) {
           store.set('allLevels', true);
-          g.showOverlay('All ten cleared', `Final level done in ${used} shots. That's the whole ladder.`, [{ label: 'Play level 1', action: () => load(g, 0) }]);
+          g.showOverlay('All ten cleared', `Final level done in ${used} shots. That's the whole ladder.`, [{ label: 'Play level 1', action: () => load(g, 0) }], {
+            best: true,
+            share: 'I cleared all ten levels of Stick Hoops.',
+          });
         } else {
-          g.showOverlay(`Level ${n} cleared`, `${made} of ${L.need} in ${used} shot${used > 1 ? 's' : ''}. Next: ${LEVELS[n].name}.`, [{ label: `Level ${n + 1}`, action: () => load(g, n) }]);
+          g.showOverlay(`Level ${n} cleared`, `${made} of ${L.need} in ${used} shot${used > 1 ? 's' : ''}. Next: ${LEVELS[n].name}.`, [{ label: `Level ${n + 1}`, action: () => load(g, n) }], {});
         }
         onLevelChange?.(level);
       } else if (left <= 0) {
         sfx.fail();
-        g.showOverlay('Out of balls', `You made ${made} of the ${L.need} needed on ${L.name}.`, [{ label: 'Retry', action: () => load(g, level) }]);
+        g.showOverlay('Out of balls', `You made ${made} of the ${L.need} needed on ${L.name}.`, [{ label: 'Retry', action: () => load(g, level) }], {});
       }
     },
     hud() {

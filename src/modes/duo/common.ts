@@ -1,5 +1,5 @@
 import type { Game } from '../../game/game';
-import type { OverlayButton } from '../../game/types';
+import type { RoundEnd, OverlayButton } from '../../game/types';
 
 // Shared bits for same-device duo modes: one figure on court, players pass the device.
 
@@ -35,8 +35,8 @@ export function delay() {
   };
 }
 
-export function handoff(g: Game, title: string, body: string, buttons: OverlayButton[]): void {
-  g.showOverlay(title, body, buttons);
+export function handoff(g: Game, title: string, body: string, buttons: OverlayButton[], end?: RoundEnd): void {
+  g.showOverlay(title, body, buttons, end);
 }
 
 /** "HO···" style letter display for HORSE. */

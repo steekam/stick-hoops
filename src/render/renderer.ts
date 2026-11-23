@@ -42,6 +42,8 @@ export class Renderer {
   private bird = { state: 'sit' as 'sit' | 'fly' | 'back', t: 0, x: 0, y: 0, vx: 0, vy: 0, fx: 0, fy: 0 };
   private gusts = Array.from({ length: 16 }, () => ({ x: Math.random() * W, y: 40 + Math.random() * (FLOOR - 120), l: 10 + Math.random() * 24 }));
   private dribHit = false;
+  /** Paper confetti for a new personal best. */
+  private bits: { x: number; y: number; vx: number; vy: number; a: number; va: number; w: number; c: number; t: number }[] = [];
   /** The court never moves, so it is drawn once into this layer and copied each frame. */
   private bg: HTMLCanvasElement | null = null;
   private bgKey = '';
@@ -72,11 +74,26 @@ export class Renderer {
   clearPops(): void { this.pops = []; }
   netSwing(): void { this.net = 1; }
 
+  /** Burst of paper scraps from both top corners. Skipped when the player asks for less motion. */
+  confetti(): void {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (let i = 0; i < 90; i++) {
+      const left = i % 2 === 0;
+      this.bits.push({
+        x: left ? -10 : W + 10, y: 40 + Math.random() * 120,
+        vx: (left ? 1 : -1) * (180 + Math.random() * 420), vy: -260 - Math.random() * 260,
+        a: Math.random() * 6, va: (Math.random() - 0.5) * 16, w: 5 + Math.random() * 6, c: i % 4, t: 0,
+      });
+    }
+  }
+
   update(dt: number, g: Game): void {
     const h = hoopGeom(g.world, g.tick);
     this.hoopPos = { x: h.x, y: h.y };
     this.net = Math.max(0, this.net - dt * 1.6);
     for (const p of this.pops) p.t += dt;
+    for (const b of this.bits) { b.t += dt; b.vy += 520 * dt; b.vx *= 1 - 1.6 * dt; b.vy = Math.min(b.vy, 140); b.x += b.vx * dt + Math.sin(b.t * 5 + b.a) * 30 * dt; b.y += b.vy * dt; b.a += b.va * dt; }
+    if (this.bits.length) this.bits = this.bits.filter((b) => b.y < H + 20 && b.t < 6);
     this.pops = this.pops.filter((p) => p.t < 1.2);
     for (const s of this.gusts) { s.x += g.world.wind * dt * 0.9; if (s.x > W + 40) s.x = -40; if (s.x < -40) s.x = W + 40; }
     // The bird on the backboard flies off when a shot comes close, then comes back.
@@ -137,6 +154,23 @@ export class Renderer {
       ctx.textAlign = 'left';
     }
     ctx.globalAlpha = 1;
+    if (this.bits.length) this.drawConfetti();
+  }
+
+  private drawConfetti(): void {
+    const { ctx, pen } = this;
+    const cols = [pen.c.accent, pen.c.ball, pen.c.ink, pen.c.paint];
+    ctx.lineWidth = 1.2;
+    for (const b of this.bits) {
+      // A flat scrap seen tumbling: its height flips with the spin, so it flutters.
+      const h = b.w * 0.6 * Math.cos(b.a * 1.7);
+      ctx.save();
+      ctx.translate(b.x, b.y); ctx.rotate(b.a);
+      ctx.fillStyle = cols[b.c];
+      ctx.fillRect(-b.w / 2, -h / 2, b.w, h);
+      if (b.c !== 2) { ctx.strokeStyle = pen.c.ink; ctx.strokeRect(-b.w / 2, -h / 2, b.w, h); }
+      ctx.restore();
+    }
   }
 
   // ---------- the court (cached) ----------

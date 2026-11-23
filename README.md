@@ -1,6 +1,9 @@
 # Stick Hoops
 
-A black-and-white stick figure basketball game. Press, pull back, let go.
+A pencil-sketch basketball game. Press, pull back, let go. Six modes, two of them for two
+players on one device. Free, no sign-up, plays offline.
+
+![Stick Hoops](public/og.png)
 
 ```
 npm install
@@ -20,6 +23,7 @@ npm run build:preview  # single-file build for the Claude artifact preview (dist
 | `src/game` | The game loop (`Game`), input, and the `Mode` interface every mode implements. |
 | `src/modes` | Solo modes (`solo/`), same-device duo modes (`duo/`), and the registry the menu reads. |
 | `src/ui` | DOM around the canvas: shell (HUD, overlay), menu, tutorial. |
+| `promo` | The release trailer, rendered frame by frame with the real engine (see below). |
 | `src/net` | Transport interface. Phase 1 is local only; phase 2 adds PartyKit rooms behind it. |
 
 ## Determinism rules for `src/sim`
@@ -58,6 +62,9 @@ What they cover:
 - Determinism: 500 shots across walls, wind, tight rims and moving hoops give identical results in
   the browser and in Node, which is what the server will use to verify scores.
 - Layout at phone size (no sideways scrolling, overlay buttons on screen) and the dark theme.
+- Release: pause (Esc, the button, leaving the tab) freezes the clock; end-of-round cards have
+  Share and Menu; the new-best stamp shows only when a best is beaten; the whole court fits on
+  phones held sideways and short laptops; meta tags, manifest, icons and the service worker load.
 
 CI runs both suites on every push.
 
@@ -82,3 +89,33 @@ screen size, browser and recent errors; the player can untick that.
 
 Until the Worker is deployed (see `worker/feedback/README.md`, about 10 minutes, $0), or if it's
 down, the form offers a prefilled GitHub issue instead.
+
+## Deploying
+
+The game is a static site: `npm run build` and upload `dist/`. It costs nothing to host.
+
+**Cloudflare Pages** (recommended): connect the repo, build command `npm run build`, output
+directory `dist`. `public/_headers` sets caching: hashed files are cached for a year, the page
+and service worker are always revalidated, so a new release shows up on the next visit.
+
+Set `VITE_SITE_URL` (in `.env`, or as a Pages environment variable) to the address you deploy
+to, with a trailing slash. Share links and the social card (`og.png`) use it. It defaults to
+`https://stick-hoops.pages.dev/`.
+
+After the first visit the game works offline (`public/sw.js`). Each release registers the worker
+with its version number, which clears the old cache.
+
+## Trailer
+
+`promo/trailer.ts` draws a 40-second trailer with the game engine itself. Shots are planned with
+the simulation so each ball drops through the net on a beat; the soundtrack is a beat
+synthesized in Web Audio plus the game's own sounds, replayed offline.
+
+```
+npx vite --config promo/vite.config.ts &      # trailer page on :5174, no hot reload
+node promo/render.mjs                          # → promo/out/stick-hoops-trailer.mp4
+node promo/render.mjs --site example.com       # different address on the end card
+python3 promo/og.py promo/out/frame-0320.png   # rebuild public/og.png (render --stills 320 first)
+```
+
+Needs ffmpeg and Playwright's Chromium.

@@ -155,7 +155,7 @@ export function sabotage(first: Side = 0): Mode {
     clearEffects(g);
     handoff(g, `${TAGS[w]} wins`, `${st.scores[w]} to ${st.scores[l]}.`, [
       { label: 'Rematch', action: () => g.setMode(sabotage(l)) },
-    ]);
+    ], { share: `${TAGS[w]} won Sabotage ${st.scores[w]} to ${st.scores[l]} on Stick Hoops.` });
   }
 
   return {

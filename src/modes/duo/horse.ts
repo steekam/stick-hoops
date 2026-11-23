@@ -106,7 +106,7 @@ export function horse(first: Side = 0): Mode {
     sfx.fail();
     handoff(g, `${TAGS[w]} wins`, `${TAGS[l]} spelled HORSE. ${TAGS[w]} had ${st.letters[w] ? WORD.slice(0, st.letters[w]) : 'no letters'}.`, [
       { label: 'Rematch', action: () => g.setMode(horse(l)) },
-    ]);
+    ], { share: `${TAGS[w]} won a game of HORSE on Stick Hoops.` });
   }
 
   return {

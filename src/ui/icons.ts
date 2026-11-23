@@ -14,6 +14,7 @@ const PATHS: Record<string, string> = {
   bug: '<rect x="7.5" y="8" width="9" height="12" rx="4.5"/><path d="M12 8v12M9.5 5.5l1.2 2.3M14.5 5.5l-1.2 2.3M4 12h3.5M16.5 12H20M5 17.5l2.8-1.5M19 17.5l-2.8-1.5M5 7l2.8 2M19 7l-2.8 2"/>',
   idea: '<path d="M9 17h6M10 20.5h4M12 3a6 6 0 0 0-3.6 10.8c.6.5.9 1.1.9 1.8V17h5.4v-1.4c0-.7.3-1.3.9-1.8A6 6 0 0 0 12 3z"/>',
   look: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16.5" cy="9" r="1.6"/>',
+  pause: '<path d="M8.5 5.5v13M15.5 5.5v13"/>',
   menu: '<path d="M4 7.2h16M4 12h16M4 16.8h16"/>',
   sound: '<path d="M4 9.2h3.8L13 5v14l-5.2-4.2H4z"/><path d="M16.2 9.2a4 4 0 0 1 0 5.6M18.8 6.6a7.6 7.6 0 0 1 0 10.8"/>',
   mute: '<path d="M4 9.2h3.8L13 5v14l-5.2-4.2H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>',

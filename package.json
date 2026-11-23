@@ -1,13 +1,13 @@
 {
   "name": "stick-hoops",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:preview": "tsc --noEmit && vite build --mode preview && node scripts/artifact.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p promo/tsconfig.json",
     "test": "vitest run",
     "test:e2e": "vite build && e2e run",
     "test:all": "npm test && npm run test:e2e"

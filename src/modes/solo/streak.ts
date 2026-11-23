@@ -30,7 +30,10 @@ export function streak(): Mode {
       best = Math.max(best, n);
       sfx.fail();
       const sw = swishes ? ` ${swishes} swish${swishes === 1 ? '' : 'es'}.` : '';
-      g.showOverlay('Streak over', `${n} in a row.${sw}${newBestText(beaten) || ` Best is ${best}.`}`, [{ label: 'Go again', action: () => g.setMode(streak()) }]);
+      g.showOverlay('Streak over', `${n} in a row.${sw}${newBestText(beaten) || ` Best is ${best}.`}`, [{ label: 'Go again', action: () => g.setMode(streak()) }], {
+        best: beaten.includes('streak') && n > 0,
+        share: `I hit ${n} in a row in Streak on Stick Hoops.`,
+      });
     },
     hud: (g) => ({
       left: 'Streak · one miss ends it',

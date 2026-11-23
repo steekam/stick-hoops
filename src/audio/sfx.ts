@@ -3,7 +3,10 @@ import { store } from '../storage';
 // Every sound is synthesized with Web Audio: no files to load. Browsers only allow audio after
 // the player interacts, so the context is created on the first tap or key press (see resume()).
 
-let ac: AudioContext | null = null;
+let ac: BaseAudioContext | null = null;
+/** Offline rendering (the trailer): sounds are scheduled at `when` instead of "now". */
+let offline = false;
+let when = 0;
 let master: GainNode;
 let noiseBuf: AudioBuffer;
 let on = store.get('sound', true);
@@ -25,7 +28,27 @@ function init(): void {
   }
 }
 
-const ready = (): boolean => !!ac && on && ac.state === 'running';
+const ready = (): boolean => !!ac && (offline || (on && ac.state === 'running'));
+const now = (): number => (offline ? when : ac!.currentTime);
+
+/**
+ * Render the game's sounds into an OfflineAudioContext instead of the speakers. Used by the
+ * trailer (promo/) so its soundtrack is the real game audio. Call at(t) before each sound.
+ */
+export const sfxOffline = {
+  attach(ctx: OfflineAudioContext, dest: AudioNode, gain = 0.6): void {
+    ac = ctx;
+    offline = true;
+    master = ctx.createGain();
+    master.gain.value = gain;
+    master.connect(dest);
+    const n = ctx.sampleRate;
+    noiseBuf = ctx.createBuffer(1, n, n);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  },
+  at(t: number): void { when = t; },
+};
 
 function env(g: GainNode, t: number, a: number, peak: number, dec: number): void {
   g.gain.setValueAtTime(0.0001, t);
@@ -36,7 +59,7 @@ function env(g: GainNode, t: number, a: number, peak: number, dec: number): void
 interface ToneOpts { to?: number; delay?: number; a?: number }
 function tone(f: number, type: OscillatorType, peak: number, dec: number, o: ToneOpts = {}): void {
   if (!ready() || !ac) return;
-  const t = ac.currentTime + (o.delay ?? 0), a = o.a ?? 0.004;
+  const t = now() + (o.delay ?? 0), a = o.a ?? 0.004;
   const osc = ac.createOscillator(), g = ac.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(f, t);
@@ -50,7 +73,7 @@ function tone(f: number, type: OscillatorType, peak: number, dec: number, o: Ton
 interface NoiseOpts { type?: BiquadFilterType; f?: number; to?: number; q?: number; delay?: number; a?: number }
 function noise(peak: number, dec: number, o: NoiseOpts = {}): void {
   if (!ready() || !ac) return;
-  const t = ac.currentTime + (o.delay ?? 0), a = o.a ?? 0.004;
+  const t = now() + (o.delay ?? 0), a = o.a ?? 0.004;
   const src = ac.createBufferSource(), bf = ac.createBiquadFilter(), g = ac.createGain();
   src.buffer = noiseBuf;
   bf.type = o.type ?? 'bandpass';
@@ -67,7 +90,7 @@ export const sfx = {
   /** Call from any user gesture; safe to call repeatedly. */
   resume(): void {
     init();
-    if (ac && ac.state !== 'running') ac.resume().catch(() => {});
+    if (ac && !offline && ac.state !== 'running') (ac as AudioContext).resume().catch(() => {});
   },
   get on(): boolean {
     return on;
@@ -94,6 +117,14 @@ export const sfx = {
   buzzer() { tone(200, 'square', 0.1, 0.6, { a: 0.01 }); tone(203, 'square', 0.07, 0.6, { a: 0.01 }); },
   clear() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 'triangle', 0.13, 0.25, { delay: i * 0.09 })); },
   fail() { tone(392, 'triangle', 0.12, 0.22); tone(294, 'triangle', 0.12, 0.35, { delay: 0.18 }); },
+  /** New personal best: a bright arpeggio over a cheer. */
+  fanfare() {
+    [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 'triangle', 0.12, i === 4 ? 0.6 : 0.16, { delay: i * 0.075 }));
+    tone(1568, 'sine', 0.05, 0.7, { delay: 0.38 });
+    noise(0.12, 1.4, { f: 1300, q: 0.6, a: 0.2, delay: 0.1 });
+  },
+  /** Pause and resume: a soft two-note blip, down then up. */
+  pause(on: boolean) { tone(on ? 520 : 390, 'triangle', 0.07, 0.07); tone(on ? 390 : 520, 'triangle', 0.07, 0.09, { delay: 0.07 }); },
   /** Short UI tick, for menus. */
   click() { tone(880, 'triangle', 0.05, 0.05); },
   /** Rising whoosh for a power-up being armed (Sabotage). */

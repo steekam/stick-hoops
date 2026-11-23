@@ -18,9 +18,16 @@ export function timed(): Mode {
     sfx.buzzer();
     const beaten = recordRound('time', { score, streak: longest, swishes });
     best = Math.max(best, score);
-    const extra = `${swishes} swish${swishes === 1 ? '' : 'es'}, longest run ${longest}.`;
+    const parts = [];
+    if (swishes) parts.push(`${swishes} swish${swishes === 1 ? '' : 'es'}`);
+    if (longest) parts.push(`longest run ${longest}`);
+    const joined = parts.join(', ');
+    const extra = joined ? ` ${joined[0].toUpperCase()}${joined.slice(1)}.` : '';
     const tail = newBestText(beaten) || ` Best is ${best}.`;
-    g.showOverlay('Time', `${score} points. ${extra}${tail}`, [{ label: 'Play again', action: () => g.setMode(timed()) }]);
+    g.showOverlay('Time', `${score} point${score === 1 ? '' : 's'}.${extra}${tail}`, [{ label: 'Play again', action: () => g.setMode(timed()) }], {
+      best: beaten.includes('score') && score > 0,
+      share: `I scored ${score} in 60 Seconds on Stick Hoops.`,
+    });
   }
 
   return {
