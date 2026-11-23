@@ -87,10 +87,11 @@ test('Menu: leaving a game mid-shot does not leak into the next mode', async ({ 
 test('Menu: sound setting persists', async ({ browser }) => {
   await open(browser);
   await browser.locator('#btn-sound').click();
-  await expect(browser.locator('#btn-sound')).toHaveText(/sound off/i);
+  await expect(browser.locator('#btn-sound')).toHaveAttribute('aria-label', /sound off/i);
+  await expect(browser.locator('#btn-sound')).toHaveText('');
   await browser.reload();
   await waitForHooks(browser);
-  await expect(browser.locator('#btn-sound')).toHaveText(/sound off/i);
+  await expect(browser.locator('#btn-sound')).toHaveAttribute('aria-label', /sound off/i);
 });
 
 test('Real input: a pointer drag shoots the ball', async ({ browser }) => {

@@ -6,6 +6,8 @@ import { renderHowTo } from './howto';
 import { MARK } from './brand';
 import { icon } from './icons';
 
+const setOpen = (v: boolean) => document.body.classList.toggle('menu-open', v);
+
 export interface MenuApi {
   show(): void;
   hide(): void;
@@ -92,26 +94,22 @@ export function createMenu(hooks: MenuHooks): MenuApi {
     if (duo) wrap.appendChild(duo);
 
     const foot = el('div', 'menu-foot');
-    const how = el('button', 'btn secondary', 'How to play');
-    how.insertAdjacentHTML('afterbegin', icon('help'));
-    how.id = 'btn-howto';
-    how.type = 'button';
-    how.onclick = () => { sfx.click(); renderHow(); };
-    const tut = el('button', 'btn secondary', 'Tutorial');
-    tut.insertAdjacentHTML('afterbegin', icon('tutorial'));
-    tut.id = 'btn-tutorial';
-    tut.type = 'button';
-    tut.onclick = () => { sfx.click(); hooks.onTutorial(); };
-    const idea = el('button', 'btn secondary', 'Suggest a level or mode');
-    idea.id = 'btn-idea';
-    idea.type = 'button';
-    idea.insertAdjacentHTML('afterbegin', icon('idea'));
-    idea.onclick = () => { sfx.click(); (window as unknown as { openFeedback?: (k: 'idea') => void }).openFeedback?.('idea'); };
-    foot.append(how, tut, idea);
+    const link = (id: string, label: string, onClick: () => void) => {
+      const b = el('button', 'linkbtn', label);
+      b.id = id;
+      b.type = 'button';
+      b.onclick = () => { sfx.click(); onClick(); };
+      return b;
+    };
+    foot.append(
+      link('btn-howto', 'How to play', renderHow),
+      link('btn-tutorial', 'Tutorial', hooks.onTutorial),
+      link('btn-idea', 'Suggest a level or mode', () => (window as unknown as { openFeedback?: (k: 'idea') => void }).openFeedback?.('idea')),
+    );
     wrap.appendChild(foot);
-    // The page footer hides on short landscape screens to give the court room; the credit lives here then.
+    // The page footer hides on short landscape screens to give the court room; the same line lives here then.
     const credit = el('p', 'menu-credit');
-    credit.innerHTML = 'Made by <a href="https://steekam.me" target="_blank" rel="noopener">steekam</a> · <a href="https://github.com/steekam/stick-hoops" target="_blank" rel="noopener">Source on GitHub</a>';
+    credit.innerHTML = 'Made by <a href="https://steekam.me" target="_blank" rel="noopener">steekam</a> · <a href="https://github.com/steekam/stick-hoops" target="_blank" rel="noopener">Source</a> · <button type="button" class="linkbtn" data-open-about>About</button>';
     wrap.appendChild(credit);
 
     root.appendChild(wrap);
@@ -130,7 +128,7 @@ export function createMenu(hooks: MenuHooks): MenuApi {
   // Arrow keys move between mode tiles, like a list.
   root.addEventListener('keydown', (e) => {
     if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft'].includes(e.key)) return;
-    const items = [...root.querySelectorAll<HTMLElement>('.mode, .menu-foot .btn')];
+    const items = [...root.querySelectorAll<HTMLElement>('.mode, .menu-foot .linkbtn')];
     const i = items.indexOf(document.activeElement as HTMLElement);
     if (i < 0) return;
     e.preventDefault();
@@ -139,9 +137,9 @@ export function createMenu(hooks: MenuHooks): MenuApi {
   });
 
   return {
-    show() { renderMain(); root.hidden = false; open = true; },
-    hide() { stopHowTo?.(); stopHowTo = null; root.hidden = true; open = false; },
-    showHowTo() { root.hidden = false; open = true; renderHow(); },
+    show() { renderMain(); root.hidden = false; open = true; setOpen(true); },
+    hide() { stopHowTo?.(); stopHowTo = null; root.hidden = true; open = false; setOpen(false); },
+    showHowTo() { root.hidden = false; open = true; setOpen(true); renderHow(); },
     get open() { return open; },
   };
 }

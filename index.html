@@ -65,9 +65,9 @@
         <div class="hdr-r">
           <button id="btn-menu" class="chip" data-icon="menu" aria-label="Menu" hidden><span class="lbl">Menu</span></button>
           <button id="btn-pause" class="chip" data-icon="pause" aria-label="Pause" aria-keyshortcuts="Escape P" hidden><span class="lbl">Pause</span></button>
-          <button id="btn-look" class="chip" data-icon="look" aria-label="Look"><span class="lbl">Look</span></button>
-          <button id="btn-feedback" class="chip" data-icon="feedback" aria-label="Feedback"><span class="lbl">Feedback</span></button>
-          <button id="btn-sound" class="chip" aria-pressed="true">Sound on</button>
+          <button id="btn-look" class="ibtn" data-icon="look" aria-label="Look" title="Look"></button>
+          <button id="btn-feedback" class="ibtn" data-icon="feedback" aria-label="Feedback" title="Feedback"></button>
+          <button id="btn-sound" class="ibtn" aria-pressed="true" aria-label="Sound on" title="Sound"></button>
         </div>
       </header>
       <div id="levels" class="levels" hidden></div>
@@ -83,16 +83,12 @@
         <div class="screen" id="feedback" role="dialog" aria-labelledby="fb-title" hidden></div>
       </div></div>
       <p class="rotate" id="rotate">Turn your phone sideways for a bigger court.</p>
-      <p class="help" id="help">Press anywhere on the court, pull back away from the hoop and let go. A longer pull shoots harder.<span class="keys"> Keys: ←→ angle, ↑↓ power, space to shoot, Esc to pause.</span></p>
-      <noscript><p class="help">Stick Hoops needs JavaScript to run.</p></noscript>
-      <footer class="site-foot" id="site-foot">
-        <span>Made by <a href="https://steekam.me" target="_blank" rel="noopener">steekam</a></span>
-        <span><a href="https://github.com/steekam/stick-hoops" target="_blank" rel="noopener">Source on GitHub</a></span>
-        <span class="ver" id="app-ver"></span>
-      </footer>
+      <noscript><p class="note">Stick Hoops needs JavaScript to run.</p></noscript>
+      <footer class="site-foot" id="site-foot">Made by <a href="https://steekam.me" target="_blank" rel="noopener">steekam</a> · <a href="https://github.com/steekam/stick-hoops" target="_blank" rel="noopener">Source</a> · <button type="button" class="linkbtn" data-open-about>About</button></footer>
     </div>
-    <section class="about" aria-labelledby="about-h">
-      <h2 id="about-h">About Stick Hoops</h2>
+    <dialog id="about" class="about" aria-labelledby="about-h">
+      <div class="about-scroll">
+      <div class="about-top"><h2 id="about-h">About Stick Hoops</h2><button type="button" class="chip" id="about-close" aria-label="Close">Close</button></div>
       <p>Stick Hoops is a free basketball game you play in the browser. A stick figure stands on a sketched half court; you press anywhere, pull back like a slingshot and let go. The longer the pull, the harder the shot. Swishes, bank shots and long shots score extra. It works with a mouse, a touch screen or the keyboard, needs no account, and keeps working offline once you've played it.</p>
       <h3>Six ways to play</h3>
       <ul>
@@ -105,8 +101,8 @@
       </ul>
       <h3>Controls</h3>
       <p>Press, pull back away from the hoop and release. On a keyboard, the arrow keys set angle and power and Space shoots. Esc or P pauses.</p>
-      <p>Made by <a href="https://steekam.me">steekam</a>. The <a href="https://github.com/steekam/stick-hoops">source code</a> is on GitHub under the MIT licence.</p>
-    </section>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

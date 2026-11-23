@@ -1,14 +1,13 @@
 import { Ctx, Colors, hatch, path, rect, W, WALL_BASE, SCOREBOARD, seeded } from './common';
 
-// Gym: a school gym seen from the court. Steel roof trusses with high-bay lamps, tall windows
-// throwing light down and to the right, wooden bleachers on the left, padded wainscot, banners,
-// a door with an exit sign. Drawn in pencil: always lighter than the gameplay layer.
+// Gym: a school gym seen from the court. Steel roof trusses, two high-bay lamps, tall windows
+// throwing light down and to the right, wooden bleachers on the left, padded wainscot, one banner. Drawn in pencil: always lighter than the gameplay layer.
 
 type P = { x: number; y: number };
 
 const WINDOWS = [44, 196, 640];
 const WIN = { w: 104, top: 56, bot: 176 };
-const LAMPS = [110, 300, 690, 880];
+const LAMPS = [300, 690];
 const LAMP_Y = 30;
 
 /** A pencil stroke: a main line plus a fainter second pass slightly off it. */
@@ -130,12 +129,6 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     for (let i = 1; i < 4; i++) line(ctx, c.ink, { x: wx + (w * i) / 4, y: top }, { x: wx + (w * i) / 4, y: bot }, 1.3, 0.55, rnd);
     line(ctx, c.ink, { x: wx, y: top + 40 }, { x: wx + w, y: top + 40 }, 1.6, 0.55, rnd);
     line(ctx, c.ink, { x: wx, y: top + 82 }, { x: wx + w, y: top + 82 }, 1.1, 0.45, rnd);
-    // a tilted vent pane (opening hopper)
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 0.9; ctx.globalAlpha = 0.5;
-    path(ctx, [{ x: wx + 2 * w / 4 + 3, y: top + 40 + 3 }, { x: wx + 3 * w / 4 - 3, y: top + 40 + 3 }, { x: wx + 3 * w / 4 - 6, y: top + 82 - 3 }, { x: wx + 2 * w / 4 + 6, y: top + 82 - 3 }], true); ctx.stroke();
-    // wire-glass cage hint: faint reflection streaks (lit upper left)
-    line(ctx, c.faint, { x: wx + 8, y: top + 10 }, { x: wx + 22, y: top + 32 }, 1.2, 0.5);
-    line(ctx, c.faint, { x: wx + 12, y: top + 6 }, { x: wx + 28, y: top + 30 }, 0.8, 0.4);
     // sill: thick slab with shade beneath
     ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, wx - 9, bot + 5, w + 18, 6); ctx.fill();
     line(ctx, c.ink, { x: wx - 9, y: bot + 11 }, { x: wx + w + 9, y: bot + 11 }, 1.8, 0.6, rnd);
@@ -202,80 +195,7 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     for (let x = 14; x < x1; x += 58) line(ctx, c.ink, { x, y: y - 22 }, { x, y }, 1.2, 0.5);
     ctx.fillStyle = c.paper;
   }
-  // Rail on the stairs side (diagonal handrail down the right end of the tiers).
-  line(ctx, c.ink, { x: 372, y: base - 6 }, { x: 292, y: base - tiers * th - 6 }, 1.2, 0.35, rnd);
-  for (let i = 0; i < tiers; i++) {
-    const x = 372 - i * 20 - 2, y = base - i * th - 6;
-    line(ctx, c.ink, { x, y }, { x, y: y - 10 }, 0.9, 0.3);
-  }
-  // Folded-up tier at the far end of the stack, suggesting retraction mechanism: a wheel.
   void topTierY;
-
-  // ---- Door with an exit sign above it, middle of the wall. ----
-  {
-    const dx = 452, dw = 62, dtop = base - 122;
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, dx - 6, dtop - 6, dw + 12, base - dtop - 34 + 6); ctx.fill();
-    ctx.strokeStyle = c.mute; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.3;
-    rect(ctx, dx, dtop, dw, base - dtop - 34); hatch(ctx, { x: dx, y: dtop, w: dw, h: base - dtop }, 5, 0.9);
-    // double door
-    line(ctx, c.ink, { x: dx, y: dtop }, { x: dx + dw, y: dtop }, 2, 0.6, rnd);
-    line(ctx, c.ink, { x: dx, y: dtop }, { x: dx, y: base - 34 }, 2, 0.6, rnd);
-    line(ctx, c.ink, { x: dx + dw, y: dtop }, { x: dx + dw, y: base - 34 }, 2, 0.6, rnd);
-    line(ctx, c.ink, { x: dx + dw / 2, y: dtop }, { x: dx + dw / 2, y: base - 34 }, 1.2, 0.5);
-    // frame
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1; ctx.globalAlpha = 0.4; rect(ctx, dx - 5, dtop - 5, dw + 10, base - dtop + 5 - 34); ctx.stroke();
-    // door windows & push bars
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
-    rect(ctx, dx + 8, dtop + 10, 14, 30); ctx.stroke(); rect(ctx, dx + dw / 2 + 9, dtop + 10, 14, 30); ctx.stroke();
-    line(ctx, c.ink, { x: dx + 4, y: dtop + 62 }, { x: dx + dw / 2 - 4, y: dtop + 62 }, 1.8, 0.6);
-    line(ctx, c.ink, { x: dx + dw / 2 + 4, y: dtop + 62 }, { x: dx + dw - 4, y: dtop + 62 }, 1.8, 0.6);
-    // exit sign
-    const sx = dx + dw / 2 - 22, sy = dtop - 26;
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, sx, sy, 44, 15); ctx.fill();
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.65; rect(ctx, sx, sy, 44, 15); ctx.stroke();
-    ctx.fillStyle = c.ink; ctx.globalAlpha = 0.6; ctx.font = '700 10px ui-monospace, Menlo, Consolas, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('EXIT', sx + 22, sy + 11.5);
-    // a little arrow
-    ctx.textAlign = 'left';
-    line(ctx, c.ink, { x: sx + 4, y: sy + 8 }, { x: sx + 9, y: sy + 8 }, 1, 0.5);
-    line(ctx, c.ink, { x: sx + 34, y: sy + 1 }, { x: sx + 34, y: sy - 8 }, 1, 0.4);
-  }
-
-  // ---- Wall clock, fire alarm, water fountain, vent. ----
-  {
-    const cx = 598, cy = 130, r = 15;
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(cx, cy, r + 3, 0, 7); ctx.fill();
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke();
-    ctx.lineWidth = 0.7; ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.arc(cx + 0.8, cy - 0.6, r + 0.8, 0.3, 5.6); ctx.stroke();
-    ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 12; i++) {
-      const a = (i * Math.PI) / 6, r1 = r - (i % 3 ? 2.5 : 4.5);
-      path(ctx, [{ x: cx + Math.cos(a) * r1, y: cy + Math.sin(a) * r1 }, { x: cx + Math.cos(a) * (r - 1.5), y: cy + Math.sin(a) * (r - 1.5) }]); ctx.stroke();
-    }
-    line(ctx, c.ink, { x: cx, y: cy }, { x: cx + 6, y: cy - 6 }, 1.6, 0.65);
-    line(ctx, c.ink, { x: cx, y: cy }, { x: cx - 2, y: cy + 9 }, 1.1, 0.6);
-    dot(ctx, c.ink, cx, cy, 1.3, 0.7);
-    // fire alarm
-    const ax = 540, ay = 200;
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, ax, ay, 12, 18); ctx.fill();
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.55; rect(ctx, ax, ay, 12, 18); ctx.stroke();
-    line(ctx, c.ink, { x: ax + 2, y: ay + 8 }, { x: ax + 10, y: ay + 8 }, 1.5, 0.5);
-    dot(ctx, c.ink, ax + 6, ay + 4, 1.4, 0.45);
-    // vent grille high on the wall
-    const vx = 318, vy = 128;
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, vx, vy, 46, 20); ctx.fill();
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1.3; ctx.globalAlpha = 0.5; rect(ctx, vx, vy, 46, 20); ctx.stroke();
-    for (let i = 1; i < 6; i++) line(ctx, c.mute, { x: vx + 3, y: vy + i * 3.2 }, { x: vx + 43, y: vy + i * 3.2 - 1 }, 0.9, 0.5);
-    // water fountain on the wall, right of the door
-    const fx = 560, fy = base - 74;
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, fx, fy, 30, 16); ctx.fill();
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.55; rect(ctx, fx, fy, 30, 16); ctx.stroke();
-    ctx.strokeStyle = c.mute; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.35; rect(ctx, fx + 1, fy + 8, 28, 8); hatch(ctx, { x: fx + 1, y: fy + 8, w: 28, h: 8 }, 3, -0.9);
-    path(ctx, [{ x: fx + 8, y: fy - 5 }, { x: fx + 8, y: fy }]); ctx.strokeStyle = c.ink; ctx.lineWidth = 1.3; ctx.globalAlpha = 0.55; ctx.stroke();
-    path(ctx, [{ x: fx + 5, y: fy - 5 }, { x: fx + 11, y: fy - 5 }]); ctx.stroke();
-    line(ctx, c.ink, { x: fx + 6, y: fy + 16 }, { x: fx + 6, y: base - 34 }, 1.2, 0.4);
-    line(ctx, c.ink, { x: fx + 24, y: fy + 16 }, { x: fx + 24, y: base - 34 }, 1.2, 0.4);
-  }
 
   // ---- Banners & retired jerseys hanging from the truss on strings. Blue is the only colour. ----
   const banner = (x: number, y: number, w: number, h: number, label: string, size = 18) => {
@@ -299,24 +219,7 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     // pennant stars
     for (let s = 0; s < 3; s++) dot(ctx, c.ink, x + w / 2 - 10 + s * 10, y + 14, 1.5, 0.65);
   };
-  banner(796, 36, 50, 82, 'B');
-  banner(860, 36, 50, 82, '24');
-  banner(748, 36, 36, 62, '09', 14);
-
-  // Retired jerseys, pinned flat beside the vent and between the windows.
-  const jersey = (x: number, y: number, num: string) => {
-    line(ctx, c.ink, { x: x + 8, y: botY + 4 }, { x: x + 8, y: y + 2 }, 0.8, 0.5);
-    line(ctx, c.ink, { x: x + 28, y: botY + 4 }, { x: x + 28, y: y + 2 }, 0.8, 0.5);
-    const s = [{ x: x + 2, y }, { x: x + 11, y }, { x: x + 18, y: y + 10 }, { x: x + 25, y }, { x: x + 34, y }, { x: x + 38, y: y + 12 }, { x: x + 33, y: y + 18 }, { x: x + 33, y: y + 54 }, { x: x + 3, y: y + 54 }, { x: x + 3, y: y + 18 }, { x, y: y + 12 }];
-    ctx.fillStyle = c.paint; ctx.globalAlpha = 0.9; path(ctx, s, true); ctx.fill();
-    ctx.strokeStyle = c.ink; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.22; path(ctx, s, true); hatch(ctx, { x, y, w: 38, h: 54 }, 4, -0.9);
-    ctx.lineWidth = 1.7; ctx.globalAlpha = 0.75; path(ctx, s, true); ctx.stroke();
-    ctx.fillStyle = c.ink; ctx.globalAlpha = 0.75; ctx.font = '800 16px ui-monospace, Menlo, Consolas, monospace'; ctx.textAlign = 'center';
-    ctx.fillText(num, x + 18, y + 36); ctx.textAlign = 'left';
-  };
-  jersey(318, 40, '4');
-  // second jersey sits left of the scoreboard cables (x 405+): fine.
-  void SCOREBOARD;
+  banner(830, 36, 50, 82, 'B');
 
   // Roof support: cross-bracing diagonals between the lower chord and a mid purlin along the far sides.
   ctx.globalAlpha = 1;
@@ -337,7 +240,7 @@ export function drawGymLive(ctx: Ctx, c: Colors, time: number): void {
   });
   // Dust motes drifting down-right inside the window beams.
   ctx.fillStyle = c.mute;
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 6; i++) {
     const wx = WINDOWS[i % 3];
     const ph = (time * (0.018 + (i % 5) * 0.004) + i * 0.173) % 1; // 0..1 down the beam
     const y = WIN.bot + ph * (WALL_BASE - WIN.bot);

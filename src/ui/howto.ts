@@ -89,12 +89,6 @@ export function renderHowTo(root: HTMLElement, onBack: () => void): () => void {
   grid.append(aim, keys, dots, score);
   wrap.appendChild(grid);
 
-  const foot = el('div', 'btns');
-  const done = el('button', 'btn', 'Got it');
-  done.id = 'btn-howto-done';
-  foot.appendChild(done);
-  wrap.appendChild(foot);
-
   root.appendChild(wrap);
   root.scrollTop = 0;
 
@@ -102,7 +96,6 @@ export function renderHowTo(root: HTMLElement, onBack: () => void): () => void {
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
   const cleanup = () => document.removeEventListener('keydown', onKey);
   back.onclick = close;
-  done.onclick = close;
   document.addEventListener('keydown', onKey);
   back.focus({ preventScroll: true });
   return cleanup;

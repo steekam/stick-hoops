@@ -35,7 +35,7 @@ export function createShell(): Shell {
 
   const sound = $<HTMLButtonElement>('btn-sound');
   const label = () => {
-    sound.innerHTML = `${icon(sfx.on ? 'sound' : 'mute')}<span class="lbl">${sfx.on ? 'Sound on' : 'Sound off'}</span>`;
+    sound.innerHTML = icon(sfx.on ? 'sound' : 'mute');
     sound.setAttribute('aria-label', sfx.on ? 'Sound on' : 'Sound off');
     sound.setAttribute('aria-pressed', String(sfx.on));
   };
@@ -78,7 +78,7 @@ export function createShell(): Shell {
     hideOverlay() { overlay.hidden = true; },
     overlayOpen: () => !overlay.hidden,
     setHud(h: Hud) {
-      $('hud').hidden = false;
+      $('hud').hidden = !(h.left || h.mid || h.right);
       $('hud-l').textContent = h.left;
       $('hud-m').textContent = h.mid;
       const r = $('hud-r');

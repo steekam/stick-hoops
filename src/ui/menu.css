@@ -18,7 +18,6 @@
 .menu-label {
   margin: 0; font-family: var(--mono); font-size: 11px; font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute);
-  border-bottom: 2px solid var(--faint); padding-bottom: 6px;
 }
 
 .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -27,20 +26,18 @@
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 0;
   padding: 12px 14px; min-height: 44px;
 }
-.mode:hover, .mode:focus-visible { background: var(--ink); color: var(--paper); }
-.mode:hover .mode-blurb, .mode:focus-visible .mode-blurb { color: var(--paper); }
-.mode:hover .mode-best, .mode:focus-visible .mode-best { border-color: var(--paper); }
+/* Hover is quiet: the name gets an ink underline. Keyboard focus also gets the dashed ring. */
+.mode:hover .mode-name, .mode:focus-visible .mode-name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .mode:active { transform: translate(2px, 2px); }
 .mode-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .mode-name { font-family: var(--display); font-weight: 700; font-size: clamp(14px, 2vw, 17px); line-height: 1.1; }
 .mode-best {
   font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-  border: 2px solid var(--ink); padding: 1px 6px; font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .mode-blurb { font-size: 12px; line-height: 1.45; color: var(--mute); }
 
-.menu-foot { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 2px; }
-.menu-foot .btn.secondary:hover, .menu-foot .btn.secondary:focus-visible { background: var(--ink); color: var(--paper); }
+.menu-foot { display: flex; gap: 6px 20px; flex-wrap: wrap; padding-top: 2px; font-size: 12px; }
 
 /* How to play */
 .ht-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -61,7 +58,7 @@ kbd { font-family: var(--mono); font-size: 11px; font-weight: 600; border: 2px s
 /* Tutorial strip: sits above the court so it never covers it. */
 .tut {
   display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap;
-  border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 10px 12px; background: var(--paper);
+  border: 2px solid var(--ink); padding: 10px 12px; background: var(--paper);
 }
 .tut-meta { display: flex; flex-direction: column; gap: 6px; }
 .tut-step { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute); white-space: nowrap; }
@@ -83,4 +80,10 @@ kbd { font-family: var(--mono); font-size: 11px; font-weight: 600; border: 2px s
   .tut #btn-skip-tutorial { order: 1; margin-left: auto; padding: 5px 9px; }
   .tut-body { order: 2; flex-basis: 100%; }
   .tut-title { font-size: 13px; }
+}
+
+/* Phone portrait: the menu takes the whole screen so every mode is visible. The header (Look, Feedback, Sound) stays reachable above it. */
+@media (max-width: 640px) and (orientation: portrait) {
+  #menu { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: calc(60px + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body.menu-open header { position: relative; z-index: 21; }
 }

@@ -38,28 +38,29 @@ const FONT: Record<string, number[]> = {};
 for (const k in FONT_SRC) FONT[k] = FONT_SRC[k].split(' ').map(h => parseInt(h, 16));
 const UNKNOWN = FONT['?'];
 
-// Display geometry, relative to the LED window: three dot grids (label, big, small).
+// Display geometry, relative to the LED window: dot grids for the score (centred, or nudged up when a clock sits below it) and the clock.
 const WX = BX + 9, WY = BY + 8, WW = BW - 18, WH = BH - 16;
 interface Grid { cols: number; pitch: number; r: number; y: number }
-const G_LABEL: Grid = { cols: 104, pitch: 1.75, r: 0.72, y: WY + 4 };
-const G_BIG: Grid = { cols: 41, pitch: 4.3, r: 1.7, y: WY + 25 };
+const G_BIG: Grid = { cols: 41, pitch: 4.3, r: 1.7, y: WY + 22 };
+const G_BIG_UP: Grid = { ...G_BIG, y: WY + 17 }; // nudged up when a clock sits below the score
 const G_SMALL: Grid = { cols: 104, pitch: 1.75, r: 0.72, y: WY + WH - 4 - 6 * 1.75 };
 const gx = (g: Grid) => WX + (WW - (g.cols - 1) * g.pitch) / 2;
 
 // The unlit grid never changes, so it is baked once per theme into an offscreen canvas.
 const BAKE = 3;
-let ghost: HTMLCanvasElement | null = null;
-let ghostKey = '';
-function bakeGhost(c: Colors): HTMLCanvasElement | null {
-  if (ghost && ghostKey === c.faint) return ghost;
+const ghosts: Record<string, { cv: HTMLCanvasElement; key: string }> = {};
+function bakeGhost(c: Colors, withClock: boolean): HTMLCanvasElement | null {
+  const name = withClock ? 'clock' : 'score';
+  const hit = ghosts[name];
+  if (hit && hit.key === c.faint) return hit.cv;
   if (typeof document === 'undefined') return null;
-  ghost = ghost || document.createElement('canvas');
+  const ghost = hit?.cv ?? document.createElement('canvas');
   ghost.width = WW * BAKE; ghost.height = WH * BAKE;
   const g = ghost.getContext('2d');
   if (!g) return null;
   g.scale(BAKE, BAKE); g.translate(-WX, -WY);
-  g.lineCap = 'round'; g.strokeStyle = c.faint; g.globalAlpha = 0.45;
-  for (const gr of [G_LABEL, G_BIG, G_SMALL]) {
+  g.lineCap = 'round'; g.strokeStyle = c.faint; g.globalAlpha = 0.35;
+  for (const gr of withClock ? [G_BIG_UP, G_SMALL] : [G_BIG]) {
     g.lineWidth = gr.r * 2; g.beginPath();
     const x0 = gx(gr);
     for (let row = 0; row < 7; row++) for (let col = 0; col < gr.cols; col++) {
@@ -67,7 +68,7 @@ function bakeGhost(c: Colors): HTMLCanvasElement | null {
     }
     g.stroke();
   }
-  ghostKey = c.faint;
+  ghosts[name] = { cv: ghost, key: c.faint };
   return ghost;
 }
 
@@ -100,10 +101,15 @@ function drawDots(ctx: Ctx, g: Grid, text: string, maxChars: number, color: stri
   ctx.lineWidth = g.r * 2; ctx.globalAlpha = 1; ctx.stroke();
 }
 
-/** A scoreboard hanging from the ceiling, showing the live score in orange digits. */
+const CLOCK = /^\d:\d\d( \u00b7 \u00d7\d+)?$/;
+
+/** A scoreboard hanging from the ceiling: the score in orange digits, and the clock in timed play. */
 export function drawScoreboard(ctx: Ctx, c: Colors, s: ScoreLines): void {
   const now = performance.now();
-  const big = (s.big || '').trim().slice(0, 12);
+  const big = (s.big || '').trim().slice(0, 7);
+  // Only the score, plus the 60 Seconds clock ("0:42", "0:42 · ×2"). Anything longer would be
+  // truncated and only repeats the HUD, so it is not shown.
+  const clock = CLOCK.test(s.small) ? s.small : '';
   if (big !== lastBig) { if (lastBig !== '') changedAt = now; lastBig = big; }
   const age = now - changedAt;
   const boost = age < 700 ? 1 - age / 700 : 0;
@@ -157,12 +163,11 @@ export function drawScoreboard(ctx: Ctx, c: Colors, s: ScoreLines): void {
   // LED window with its baked ghost grid, then the lit dots.
   ctx.globalAlpha = 1; ctx.strokeStyle = c.ink; ctx.lineWidth = 1.5; ctx.fillStyle = c.paper;
   rect(ctx, WX, WY, WW, WH); ctx.fill(); ctx.stroke();
-  const gh = bakeGhost(c);
+  const gh = bakeGhost(c, !!clock);
   if (gh) ctx.drawImage(gh, WX, WY, WW, WH);
   ctx.lineCap = 'round';
-  drawDots(ctx, G_LABEL, s.label.toUpperCase(), 17, c.mute);
-  drawDots(ctx, G_BIG, big.toUpperCase(), 7, c.accent, boost);
-  drawDots(ctx, G_SMALL, s.small.toUpperCase(), 17, c.ink);
+  drawDots(ctx, clock ? G_BIG_UP : G_BIG, big.toUpperCase(), 7, c.accent, boost);
+  drawDots(ctx, G_SMALL, clock, 17, c.ink);
   ctx.globalAlpha = 1;
 
   // Corner lamps on the roof of the box; they blink slowly and go solid when the score changes.

@@ -165,11 +165,12 @@ test('Sharing and installing: meta tags, manifest and icons are all there', asyn
   for (const [p, s] of Object.entries(files.status)) expect(s, p).toBe(200);
 });
 
-test('Footer credits steekam and links the source; on short landscape screens the menu carries it', async ({ browser }) => {
+test('Footer is one quiet line crediting steekam, linking the source and opening About; on short landscape screens the menu carries it', async ({ browser }) => {
   await open(browser);
   const links = await browser.evaluate(() => [...document.querySelectorAll('#site-foot a')].map((a) => [a.textContent, a.getAttribute('href'), a.getAttribute('target')]));
-  expect(links).toEqual([['steekam', 'https://steekam.me', '_blank'], ['Source on GitHub', 'https://github.com/steekam/stick-hoops', '_blank']]);
-  await expect(browser.locator('#app-ver')).toHaveText(/^v\d+\.\d+\.\d+$/);
+  expect(links).toEqual([['steekam', 'https://steekam.me', '_blank'], ['Source', 'https://github.com/steekam/stick-hoops', '_blank']]);
+  await expect(browser.locator('#site-foot')).toHaveText('Made by steekam · Source · About');
+  await expect(browser.locator('#help')).toHaveCount(0);
   await browser.setViewport({ width: 750, height: 342 });
   await expect(browser.locator('#site-foot')).toBeHidden();
   await expect(browser.locator('.menu-credit')).toBeVisible();
@@ -186,7 +187,7 @@ test('Search: canonical URL, Twitter tags, structured data, robots, sitemap and 
       creator: m('meta[name="twitter:creator"]'),
       twImage: m('meta[name="twitter:image"]'),
       ld: JSON.parse(ld) as { '@type'?: string; name?: string; url?: string; author?: { url?: string } },
-      about: document.querySelector('.about')?.textContent?.length ?? 0,
+      about: document.querySelector('#about')?.textContent?.length ?? 0,
     };
   });
   expect(head.title).toMatch(/stick-figure basketball/i);
@@ -206,4 +207,24 @@ test('Search: canonical URL, Twitter tags, structured data, robots, sitemap and 
   expect(files['robots.txt'][1]).toMatch(/Sitemap: https:\/\/.+\/sitemap\.xml/);
   expect(files['sitemap.xml'][1]).toContain('<loc>');
   expect(files['404.html'][1]).toContain('Back to the court');
+});
+
+test('About: opens from the footer, closes with the button, Esc and a backdrop click', async ({ browser }) => {
+  await open(browser);
+  const dlg = browser.locator('#about');
+  await expect(dlg).toBeHidden();
+  await browser.locator('#site-foot [data-open-about]').click();
+  await expect(dlg).toBeVisible();
+  await expect(dlg).toContainText(/six ways to play/i);
+  await browser.locator('#about-close').click();
+  await expect(dlg).toBeHidden();
+  await browser.locator('#site-foot [data-open-about]').click();
+  await expect(dlg).toBeVisible();
+  await browser.keyboard.press('Escape');
+  await expect(dlg).toBeHidden();
+  await browser.locator('#site-foot [data-open-about]').click();
+  await expect(dlg).toBeVisible();
+  // A click that lands on the dialog element itself is a click on its backdrop (the box's content fills the rest).
+  await browser.evaluate(() => document.getElementById('about')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await expect(dlg).toBeHidden();
 });

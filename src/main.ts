@@ -16,8 +16,6 @@ import { sfx } from './audio/sfx';
 document.querySelector('.brand-mark')!.innerHTML = MARK;
 document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon!)));
 
-document.getElementById('app-ver')!.textContent = `v${__APP_VERSION__}`;
-
 const canvas = document.getElementById('court') as HTMLCanvasElement;
 const shell = createShell();
 const game = new Game(canvas, shell);
@@ -143,7 +141,7 @@ pauseBtn.onclick = () => (paused ? resume() : pause());
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
   const t = e.target as HTMLElement;
-  if (t.closest('input, textarea, select, #feedback, #look')) return;
+  if (t.closest('input, textarea, select, #feedback, #look, #about')) return;
   if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
     if (paused) { e.preventDefault(); resume(); } else if (current && !game.ui.overlayOpen()) { e.preventDefault(); pause(); }
   }
@@ -203,3 +201,14 @@ const testing = new URLSearchParams(location.search).has('e2e');
 if (import.meta.env.PROD && import.meta.env.MODE !== 'preview' && !testing && 'serviceWorker' in navigator && isSecureContext) {
   addEventListener('load', () => navigator.serviceWorker.register(`./sw.js?v=${__APP_VERSION__}`).catch(() => {}));
 }
+
+// About: a native modal dialog opened from the footer (or the menu's credit line on short screens).
+const about = document.getElementById('about') as HTMLDialogElement;
+document.addEventListener('click', (e) => {
+  if (!(e.target as HTMLElement).closest('[data-open-about]')) return;
+  pause();
+  if (!about.open) about.showModal();
+});
+document.getElementById('about-close')!.onclick = () => about.close();
+about.addEventListener('click', (e) => { if (e.target === about) about.close(); }); // the backdrop
+about.addEventListener('close', () => { if (!menu.open && !paused) canvas.focus({ preventScroll: true }); });

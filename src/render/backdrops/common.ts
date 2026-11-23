@@ -24,3 +24,25 @@ export function rect(ctx: Ctx, x: number, y: number, w: number, h: number) {
 
 /** Where the hanging scoreboard sits. Backdrops keep this area clear of their own detail. */
 export const SCOREBOARD = { x: 405, y: 22, w: 170, h: 72 };
+
+/**
+ * How strongly backdrops are drawn, 0..1. Every backdrop is drawn through `faded()`, which scales
+ * each translucent stroke by this, so Gym, Street and Notebook all read at the same quiet level and
+ * the figure, ball, hoop and court lines stay the strongest marks. Opaque fills (paper that hides
+ * what is behind) are left alone.
+ */
+export const BACKDROP_FADE = 0.5;
+
+/** A view of `ctx` whose globalAlpha writes below 1 are scaled by BACKDROP_FADE. */
+export function faded(ctx: Ctx): Ctx {
+  return new Proxy(ctx, {
+    get(t, k) {
+      const v = (t as unknown as Record<string | symbol, unknown>)[k];
+      return typeof v === 'function' ? v.bind(t) : v;
+    },
+    set(t, k, v) {
+      (t as unknown as Record<string | symbol, unknown>)[k] = k === 'globalAlpha' && typeof v === 'number' && v < 1 ? v * BACKDROP_FADE : v;
+      return true;
+    },
+  });
+}

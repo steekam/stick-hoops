@@ -51,7 +51,6 @@ const MAX_ARC_TRIES = 4;
  */
 export function tutorial(hooks: TutorialHooks): Mode {
   const bar = document.getElementById('tutorial')!;
-  const help = document.getElementById('help');
   let step = 0;
   let tries = 0;
   let note = '';
@@ -128,7 +127,6 @@ export function tutorial(hooks: TutorialHooks): Mode {
     start(g) {
       step = 0; tries = 0; note = ''; done = false; active = true;
       bar.hidden = false;
-      if (help) help.hidden = true;
       enter(g, 0);
     },
     aimDots: () => (done ? 0 : STEPS[step].dots),
@@ -156,12 +154,8 @@ export function tutorial(hooks: TutorialHooks): Mode {
       note = `Higher: pull more down than sideways. ${left} ${left === 1 ? 'try' : 'tries'} left.`;
       renderBar();
     },
-    hud: () => ({
-      left: done ? 'Tutorial · done' : `Tutorial · ${STEPS[step].title}`,
-      mid: '',
-      right: done ? '3/3' : `${step + 1}/${STEPS.length}`,
-      rightNote: 'STEP',
-    }),
+    // Progress lives in the strip above the court; the scoreboard stays empty so it is shown once.
+    hud: () => ({ left: '', mid: '', right: '' }),
     stop(g) {
       if (!active) return;
       active = false;
@@ -169,7 +163,6 @@ export function tutorial(hooks: TutorialHooks): Mode {
       g.showHint = false;
       bar.hidden = true;
       bar.replaceChildren();
-      if (help) help.hidden = false;
     },
   };
 }

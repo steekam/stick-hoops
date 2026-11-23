@@ -1,5 +1,5 @@
 import type { Backdrop } from '../../settings';
-import type { Colors, Ctx } from './common';
+import { faded, type Colors, type Ctx } from './common';
 import { drawGym, drawGymLive } from './gym';
 import { drawNotebook, drawNotebookLive } from './notebook';
 import { drawStreet, drawStreetLive } from './street';
@@ -14,7 +14,8 @@ export function floorFill(b: Backdrop, c: Colors): string {
   return b === 'street' ? c.faint : c.wood;
 }
 
-export function drawBackdrop(ctx: Ctx, b: Backdrop, c: Colors): void {
+export function drawBackdrop(real: Ctx, b: Backdrop, c: Colors): void {
+  const ctx = faded(real);
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -24,7 +25,8 @@ export function drawBackdrop(ctx: Ctx, b: Backdrop, c: Colors): void {
   ctx.restore();
 }
 
-export function drawBackdropLive(ctx: Ctx, b: Backdrop, c: Colors, time: number): void {
+export function drawBackdropLive(real: Ctx, b: Backdrop, c: Colors, time: number): void {
+  const ctx = faded(real);
   ctx.save();
   if (b === 'gym') drawGymLive(ctx, c, time);
   if (b === 'street') drawStreetLive(ctx, c, time);
