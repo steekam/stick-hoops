@@ -18,7 +18,7 @@ function line(ctx: Ctx, x1: number, y1: number, x2: number, y2: number) {
 
 // 5x7 dot-matrix font, one hex byte per row (bit 4 = leftmost column).
 const FONT_SRC: Record<string, string> = {
-  '0': '0E 11 13 15 19 11 0E', '1': '04 0C 04 04 04 04 0E', '2': '0E 11 01 02 04 08 1F', '3': '1F 02 04 02 01 11 0E',
+  '0': '0E 11 11 11 11 11 0E', '1': '04 0C 04 04 04 04 0E', '2': '0E 11 01 02 04 08 1F', '3': '1F 02 04 02 01 11 0E',
   '4': '02 06 0A 12 1F 02 02', '5': '1F 10 1E 01 01 11 0E', '6': '06 08 10 1E 11 11 0E', '7': '1F 01 02 04 08 08 08',
   '8': '0E 11 11 0E 11 11 0E', '9': '0E 11 11 0F 01 02 0C',
   A: '0E 11 11 1F 11 11 11', B: '1E 11 11 1E 11 11 1E', C: '0E 11 10 10 10 11 0E', D: '1E 11 11 11 11 11 1E',

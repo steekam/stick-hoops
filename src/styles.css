@@ -74,7 +74,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .btn.secondary { background: transparent; color: var(--ink); }
 
 .note { color: var(--mute); font-size: 12px; margin: 0; }
-.site-foot { padding-top: 4px; color: var(--mute); font-size: 12px; letter-spacing: 0.02em; }
+.site-foot { padding-top: 4px; color: var(--mute); font-size: 13px; letter-spacing: 0.02em; }
 .site-foot a, .menu-credit a { display: inline-block; padding: 8px 0; margin: -8px 0; color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 /* About: a native dialog, so it is in the page for search engines and opens as a modal. It floats, so it may cast the hatch. */
 .about { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(560px, calc(100% - 32px)); max-height: calc(100dvh - 48px); height: fit-content; padding: 0; overflow: visible; isolation: isolate;
@@ -90,7 +90,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: 
 .about ul { margin: 0; padding-left: 18px; color: var(--mute); }
 .about li { text-wrap: pretty; }
 .about b { color: var(--ink); }
-.menu-credit { display: none; margin: 4px 0 0; color: var(--mute); font-size: 12px; }
+.menu-credit { display: none; margin: 4px 0 0; color: var(--mute); font-size: 13px; align-items: center; flex-wrap: wrap; gap: 0 8px; }
+.menu-credit .linkbtn { margin: 0; }
 /* While the menu is open its own title does the branding. visibility keeps the header height steady. */
 body.menu-open #brand { visibility: hidden; }
 .hdr-r { margin-left: auto; }
@@ -98,13 +99,8 @@ body.menu-open #brand { visibility: hidden; }
 body.sb-on #hud-r { visibility: hidden; }
 @media (pointer: coarse) { .kbd-only { display: none; } }
 @media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) {
+  /* Header, HUD, court and the rotate hint form one group tight under the header; the footer follows it. */
   .rotate { display: block; margin-top: -4px; text-transform: none; letter-spacing: 0.02em; }
-  /* Centre the court group in the leftover height so there is no dead block underneath. */
-  .app { min-height: 100dvh; box-sizing: border-box; }
-  /* The first visible block under the header takes the auto margin; later ones sit tight against it. */
-  .levels, .hud, .tut, .stage { margin-top: auto; }
-  .levels:not([hidden]) ~ :is(.hud, .tut, .stage), .hud:not([hidden]) ~ :is(.tut, .stage), .tut:not([hidden]) ~ .stage { margin-top: 0; }
-  .rotate { margin-bottom: auto; }
   .court { width: 100%; } /* the page is height-padded here, so width alone sets the court */
   .levels, .hud { width: 100%; }
 }
@@ -117,14 +113,19 @@ body.sb-on #hud-r { visibility: hidden; }
 }
 @media (max-width: 430px) { .brand-word { display: none; } }
 
-/* Phones on their side: every pixel of height goes to the court. */
+/* Phones on their side: every pixel of height goes to the court. Brand, HUD and buttons share one row. */
 @media (max-height: 500px) and (orientation: landscape) {
-  .app { padding-block: 6px; gap: 6px; }
-  .chip .lbl, .brand-word, .site-foot { display: none; }
-  .menu-credit { display: block; }
+  .app { padding-block: 4px; gap: 4px; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); max-width: none;
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  .app > * { grid-column: 1 / -1; }
+  header { display: contents; }
+  header h1 { grid-column: 1; grid-row: 1; }
+  .hdr-r { grid-column: 3; grid-row: 1; }
+  .hud { grid-column: 2; grid-row: 1; width: auto; margin-inline: 8px; border-bottom: 0; padding-bottom: 0; gap: 8px; align-self: center; }
+  .chip .lbl, .brand-word, .site-foot, .rotate, .hud-sub { display: none !important; }
+  .menu-credit { display: flex; }
   .chip { padding: 5px; }
   .app h1 .brand-mark { width: 28px; }
-  .hud { padding-bottom: 4px; }
 }
 
 .card.best { position: relative; }
@@ -201,7 +202,7 @@ body.sb-on #hud-r { visibility: hidden; }
   .look-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .look { min-height: 100%; }
   #look-done { position: static; align-self: stretch; justify-content: center; margin-top: auto; }
-  body.look-open header { position: relative; z-index: 21; }
+  body.look-open header, body.look-open .hdr-r { position: relative; z-index: 21; }
 }
 
 /* Feedback form: a panel over the court, same treatment as the Look picker. */
@@ -229,3 +230,12 @@ body.sb-on #hud-r { visibility: hidden; }
 @media (max-width: 640px) {
   #feedback { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
+
+/* Touch: every tap target is at least 44px, and the quiet links get a tall hit area. */
+@media (pointer: coarse) {
+  .chip, .ibtn { min-width: 44px; min-height: 44px; box-sizing: border-box; justify-content: center; }
+  .linkbtn { margin: 0; min-height: 44px; padding: 0; display: inline-flex; align-items: center; }
+  .site-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; padding-top: 0; }
+  .site-foot a, .menu-credit a { display: inline-flex; align-items: center; min-height: 44px; padding: 0; margin: 0; }
+}
+@media (pointer: coarse) and (max-width: 640px) { #look { padding-top: calc(72px + env(safe-area-inset-top, 0px)); } }

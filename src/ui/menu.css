@@ -37,7 +37,8 @@
 }
 .mode-blurb { font-size: 12px; line-height: 1.45; color: var(--mute); }
 
-.menu-foot { display: flex; gap: 6px 20px; flex-wrap: wrap; padding-top: 2px; font-size: 12px; }
+.menu-foot { display: flex; gap: 6px 20px; flex-wrap: wrap; padding-top: 2px; font-size: 13px; }
+@media (pointer: coarse) { .menu-foot { gap: 0 20px; } }
 
 /* How to play */
 .ht-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -85,15 +86,24 @@ kbd { font-family: var(--mono); font-size: 11px; font-weight: 600; border: 2px s
 /* Phone on its side: fixed full-viewport like portrait, three columns, no blurbs, so all six modes fit. */
 @media (max-height: 500px) and (orientation: landscape) {
   #menu { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: calc(52px + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
-  body.menu-open header { position: relative; z-index: 21; }
+  body.menu-open header, body.menu-open .hdr-r { position: relative; z-index: 21; }
   .menu { padding: 4px 16px 8px; gap: 8px; max-width: none; }
   .menu-fig, .menu-tag, .mode-blurb { display: none; }
-  .mode-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .mode-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  #grp-duo + .mode-grid, [aria-labelledby="grp-duo"] .mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mode { padding: 8px 10px; gap: 2px; }
+  .menu { min-height: 100%; }
+  .menu-credit { margin-top: auto; }
 }
 
 /* Phone portrait: the menu takes the whole screen so every mode is visible. The header (Look, Feedback, Sound) stays reachable above it. */
 @media (max-width: 640px) and (orientation: portrait) {
   #menu { position: fixed; inset: 0; z-index: 20; overflow: auto; padding-top: calc(60px + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
   body.menu-open header { position: relative; z-index: 21; }
+  .menu { min-height: 100%; }
+  .menu-credit { display: flex; margin-top: auto; }
 }
+
+/* Bigger touch targets push the header down, so the full-screen panels start lower. */
+@media (pointer: coarse) and (max-width: 640px) and (orientation: portrait) { #menu { padding-top: calc(72px + env(safe-area-inset-top, 0px)); } }
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) { #menu { padding-top: calc(56px + env(safe-area-inset-top, 0px)); } }

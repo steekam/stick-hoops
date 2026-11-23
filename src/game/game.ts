@@ -196,6 +196,8 @@ export class Game {
   }
 
   draw(): void {
+    // Sync the DOM HUD first so it and the canvas scoreboard (which reads the mode's HUD live) show the same numbers this frame.
+    this.refreshHud();
     this.renderer.draw(this);
   }
 
