@@ -504,8 +504,8 @@ const scenes: Scene[] = [
         if (head) pencil(head.x, head.y, -0.9 + Math.sin(clock * 21) * 0.06);
       }
       screenT();
-      caption('A BASKETBALL GAME', 120, 900, bt(b - 5), bt(1.5), 52);
-      caption('DRAWN IN PENCIL.', 120, 985, bt(b - 5.5), bt(2), 52);
+      caption('A STICK-FIGURE', 120, 900, bt(b - 5), bt(1.5), 52);
+      caption('BASKETBALL GAME.', 120, 985, bt(b - 5.5), bt(2), 52);
     },
   },
   // 8–16: the title, stamped letter by letter.

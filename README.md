@@ -1,6 +1,6 @@
 # Stick Hoops
 
-A basketball game drawn in pencil. Press on the court, pull back like a slingshot, let go.
+A stick-figure basketball game. Press on the court, pull back like a slingshot, let go.
 Six modes, two of them for two players sharing one phone. Free, no sign-up, plays offline.
 
 **Play: [stick-hoops.pages.dev](https://stick-hoops.pages.dev)**

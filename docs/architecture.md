@@ -42,7 +42,7 @@ A golden snapshot test pins a known shot. If it changes, stored replays are inva
 ## Drawing
 
 The physics is a 2D plane. Depth is drawing only: an oblique projection (`src/render/iso.ts`)
-puts the floor, rim, backboard and walls in perspective, shaded with pencil hatching instead of
+puts the floor, rim, backboard and walls in perspective, shaded with sketchy hatching instead of
 grey fills. The court, its markings and the backdrop are drawn once into an offscreen canvas and
 copied each frame. Colours come from CSS custom properties, so the canvas follows the light and
 dark themes.

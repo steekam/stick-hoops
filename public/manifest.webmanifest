@@ -1,7 +1,7 @@
 {
   "name": "Stick Hoops",
   "short_name": "Stick Hoops",
-  "description": "A pencil-sketch basketball game. Pull back, let go, swish.",
+  "description": "A stick-figure basketball game. Pull back, let go, swish.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
