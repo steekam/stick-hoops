@@ -134,3 +134,16 @@ export function drawStreetLive(ctx: Ctx, c: Colors, time: number): void {
   });
   ctx.restore();
 }
+
+/** Sky above the court, for the tall follow view: the same faint horizon streaks, carrying on up. */
+export function drawStreetUp(ctx: Ctx, c: Colors, ext: { x: number; y: number; w: number; h: number }): void {
+  const r = seeded(23), x0 = ext.x, x1 = ext.x + ext.w;
+  ctx.save();
+  ctx.strokeStyle = c.mute; ctx.lineWidth = 0.7;
+  for (let y = 115; y > ext.y; y -= 5) {
+    ctx.globalAlpha = 0.04;
+    let x = x0 + r() * 200 - 100;
+    while (x < x1) { const l = 60 + r() * 160; path(ctx, [{ x, y }, { x: x + l, y }]); ctx.stroke(); x += l + 20 + r() * 80; }
+  }
+  ctx.restore();
+}

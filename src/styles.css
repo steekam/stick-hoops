@@ -114,6 +114,18 @@ body.sb-on #hud-r { visibility: hidden; }
   body.playing .chip .lbl { display: inline; }
   body.playing .chip { padding: 7px 12px; }
 }
+/* Upright phone with the follow camera (main.ts sets body.cam-follow): while playing, the court box
+   is no longer 16:9. It takes all the height under the header and HUD; the camera puts the court in
+   its upper part and leaves the rest as the thumb pad. */
+body.cam-follow .rotate { display: none !important; }
+body.cam-follow.playing .app { height: 100dvh; min-height: 0; box-sizing: border-box; padding-block: 12px max(10px, env(safe-area-inset-bottom, 0px)); }
+body.cam-follow.playing header, body.cam-follow.playing .rotate { margin-bottom: 0; }
+body.cam-follow.playing .stage { flex: 1 1 0; min-height: 0; }
+body.cam-follow.playing .court { width: 100%; aspect-ratio: auto; min-height: 0; }
+body.cam-follow.playing .levels, body.cam-follow.playing .hud { width: 100%; }
+/* The canvas scoreboard is not drawn on the follow camera, so the page's own score stays visible. */
+body.cam-follow.sb-on #hud-r { visibility: visible; }
+
 /* Touch, in a game: Look and Feedback stay on the menu. */
 @media (pointer: coarse) and (max-width: 700px), (pointer: coarse) and (max-height: 500px) {
   body.playing #btn-look, body.playing #btn-feedback { display: none; }

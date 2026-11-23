@@ -6,14 +6,18 @@ import type { Game } from './game';
 /** Slingshot aiming: press, pull back away from the hoop, let go. Arrows + space also work. */
 export function attachInput(g: Game): void {
   const cv = g.canvas;
-  const PULL = 5.4; // world px of drag → px/s of launch speed
-  const MIN = 140; // shorter pulls are treated as a cancel
+  // Power follows how far the finger moves on the screen, not how far in the world: a pull of
+  // 30% of the short side of the window is a full-power shot, on every device and camera.
+  const MIN_PULL = 30; // CSS px: shorter pulls are treated as a cancel
+  const K = () => VMAX / (0.3 * Math.min(innerWidth, innerHeight)); // px/s of launch speed per CSS px dragged
+  let down = { x: 0, y: 0 };
 
   cv.addEventListener('pointerdown', (e) => {
     sfx.resume();
     if (!g.canShoot()) return;
     cv.setPointerCapture(e.pointerId);
     const p = g.renderer.toWorld(e.clientX, e.clientY);
+    down = { x: e.clientX, y: e.clientY };
     g.aim = { src: 'ptr', sx: p.x, sy: p.y, cx: p.x, cy: p.y, v: { x: 0, y: 0 } };
   });
   cv.addEventListener('pointermove', (e) => {
@@ -21,7 +25,8 @@ export function attachInput(g: Game): void {
     if (!a || a.src !== 'ptr') return;
     const p = g.renderer.toWorld(e.clientX, e.clientY);
     a.cx = p.x; a.cy = p.y;
-    let v = { x: (a.sx! - p.x) * PULL, y: (a.sy! - p.y) * PULL };
+    const k = K();
+    let v = { x: (down.x - e.clientX) * k, y: (down.y - e.clientY) * k }; // pull down-left, shoot up-right
     const m = Math.hypot(v.x, v.y);
     if (m > VMAX) v = { x: (v.x / m) * VMAX, y: (v.y / m) * VMAX };
     a.v = v;
@@ -30,7 +35,7 @@ export function attachInput(g: Game): void {
     const a = g.aim;
     if (!a || a.src !== 'ptr') return;
     g.aim = null;
-    if (Math.hypot(a.v.x, a.v.y) > MIN) g.shoot(a.v.x, a.v.y);
+    if (Math.hypot(a.v.x, a.v.y) > MIN_PULL * K()) g.shoot(a.v.x, a.v.y);
   });
   cv.addEventListener('pointercancel', () => (g.aim = null));
 

@@ -45,6 +45,10 @@ export function installTestHooks(g: Game): void {
 
   const hooks = {
     canShoot: () => g.canShoot(),
+    /** The part of the world on screen: {0,0,960,540} on desktop and landscape, a tall follow view on upright phones. */
+    view: () => ({ ...g.renderer.view }),
+    /** Live ball state, for checking where a real drag sent it. */
+    ball: () => (g.ball ? { x: g.ball.x, y: g.ball.y, vx: g.ball.vx, vy: g.ball.vy } : null),
     /** Planned make. `kind`: any make, a swish, or a make that touches the rim or board. */
     shootMake: (kind: 'any' | 'swish' | 'dirty' = 'any') =>
       fire((r) => r.made && (kind === 'any' || (kind === 'swish' ? r.swish : !r.swish)), `${kind} make`),

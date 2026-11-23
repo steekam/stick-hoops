@@ -12,6 +12,7 @@ import { createFeedback } from './ui/feedback';
 import { settings } from './settings';
 import { tutorial, tutorialDone } from './ui/tutorial';
 import { sfx } from './audio/sfx';
+import { followWanted, onFollowChange } from './render/director';
 
 document.querySelector('.brand-mark')!.innerHTML = MARK;
 document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon!)));
@@ -29,6 +30,11 @@ const app = document.querySelector('.app') as HTMLElement;
 const courtBox = document.querySelector('.court') as HTMLElement;
 let courtMax = 0;
 function fitCourt(): void {
+  // Upright phones: the court box fills the height under the HUD (CSS), no 16:9 fitting.
+  if (followWanted()) {
+    if (courtMax !== 0) { courtMax = 0; document.documentElement.style.removeProperty('--court-max'); }
+    return;
+  }
   const chrome = app.getBoundingClientRect().height - courtBox.getBoundingClientRect().height;
   // 4px spare so rounding never adds a scrollbar, and small changes are ignored so it can't oscillate.
   const w = Math.floor(Math.max(280, (window.innerHeight - chrome - 4) * (16 / 9)));
@@ -42,6 +48,10 @@ let fitQueued = false;
 const queueFit = () => { if (!fitQueued) { fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitCourt(); }); } };
 new ResizeObserver(queueFit).observe(app);
 addEventListener('resize', queueFit);
+// body.cam-follow marks the upright-phone layout (follow camera, tall court, thumb pad).
+const syncFollow = () => { document.body.classList.toggle('cam-follow', followWanted()); queueFit(); };
+onFollowChange(syncFollow);
+document.body.classList.toggle('cam-follow', followWanted());
 fitCourt();
 
 const menuBtn = document.getElementById('btn-menu') as HTMLButtonElement;

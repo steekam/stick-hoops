@@ -26,8 +26,16 @@ function dot(ctx: Ctx, color: string, x: number, y: number, r: number, alpha: nu
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
 }
 
-export function drawGym(ctx: Ctx, c: Colors): void {
-  const base = WALL_BASE;
+/** Options for drawing past the court's own edges (the follow camera). Defaults draw the plain court. */
+export interface GymOpts {
+  /** Leave the bleachers out, for the wall strips repeated beyond the court's left and right edges. */
+  bleachers?: boolean;
+  /** Where the bleachers start. 0 normally; further left when the view reaches past the court. */
+  bx0?: number;
+}
+
+export function drawGym(ctx: Ctx, c: Colors, o: GymOpts = {}): void {
+  const base = WALL_BASE, bx0 = o.bx0 ?? 0;
   const rnd = seeded(7331);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
@@ -144,16 +152,16 @@ export function drawGym(ctx: Ctx, c: Colors): void {
   line(ctx, c.ink, { x: 0, y: base - 1 }, { x: W, y: base - 1 }, 1.8, 0.55, rnd);
 
   // ---- Retractable bleachers along the left: stacked tiers, board seams, railing, support posts. ----
-  const tiers = 5, th = 17;
+  const tiers = o.bleachers === false ? 0 : 5, th = 17;
   const topTierY = base - 34 - tiers * th + 34; // tiers sit on the floor line
   for (let i = 0; i < tiers; i++) {
     const y = base - (i + 1) * th - (i === 0 ? 0 : 0), x1 = 372 - i * 20;
     const bTop = y, bBot = y + th;
     // riser face (paper, blocks the wall)
-    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, 0, bTop, x1, th); ctx.fill();
+    ctx.fillStyle = c.paper; ctx.globalAlpha = 1; rect(ctx, bx0, bTop, x1 - bx0, th); ctx.fill();
     // plank seats: a thick seat board + riser face hatched
     ctx.strokeStyle = c.mute; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.34;
-    rect(ctx, 0, bTop + 5, x1, th - 5); hatch(ctx, { x: 0, y: bTop + 5, w: x1, h: th - 5 }, 3.6, -0.15);
+    rect(ctx, bx0, bTop + 5, x1 - bx0, th - 5); hatch(ctx, { x: bx0, y: bTop + 5, w: x1 - bx0, h: th - 5 }, 3.6, -0.15);
     ctx.globalAlpha = 0.5; ctx.lineWidth = 0.7;
     // wood grain on seat board
     for (let g = 0; g < 4; g++) {
@@ -163,8 +171,8 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     // plank ends every 56 units (vertical seams)
     ctx.globalAlpha = 0.38;
     for (let x = 28 + (i % 2) * 20; x < x1; x += 56) { path(ctx, [{ x, y: bTop }, { x, y: bTop + 5 }]); ctx.stroke(); }
-    line(ctx, c.ink, { x: 0, y: bTop }, { x: x1, y: bTop }, 2.2, 0.62, rnd);
-    line(ctx, c.ink, { x: 0, y: bTop + 5 }, { x: x1, y: bTop + 5 }, 1, 0.42, rnd);
+    line(ctx, c.ink, { x: bx0, y: bTop }, { x: x1, y: bTop }, 2.2, 0.62, rnd);
+    line(ctx, c.ink, { x: bx0, y: bTop + 5 }, { x: x1, y: bTop + 5 }, 1, 0.42, rnd);
     line(ctx, c.ink, { x: x1, y: bTop }, { x: x1, y: bBot }, 1.4, 0.6, rnd);
     // shadow cast under each seat (hatch) onto the riser
     ctx.strokeStyle = c.ink; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.25;
@@ -177,10 +185,10 @@ export function drawGym(ctx: Ctx, c: Colors): void {
     }
   }
   // Handrail on the top tier: posts and a double rail.
-  {
+  if (tiers > 0) {
     const i = tiers - 1, y = base - (i + 1) * th, x1 = 372 - i * 20;
-    line(ctx, c.ink, { x: 0, y: y - 22 }, { x: x1, y: y - 22 }, 1.5, 0.55, rnd);
-    line(ctx, c.ink, { x: 0, y: y - 11 }, { x: x1, y: y - 11 }, 0.9, 0.4, rnd);
+    line(ctx, c.ink, { x: bx0, y: y - 22 }, { x: x1, y: y - 22 }, 1.5, 0.55, rnd);
+    line(ctx, c.ink, { x: bx0, y: y - 11 }, { x: x1, y: y - 11 }, 0.9, 0.4, rnd);
     for (let x = 14; x < x1; x += 58) line(ctx, c.ink, { x, y: y - 22 }, { x, y }, 1.2, 0.5);
     ctx.fillStyle = c.paper;
   }
@@ -237,6 +245,21 @@ export function drawGymLive(ctx: Ctx, c: Colors, time: number): void {
     if (x > 770 && y > 180) continue; // keep the hoop area calm
     ctx.globalAlpha = 0.16 * Math.sin(ph * Math.PI);
     ctx.beginPath(); ctx.arc(x, y, 1.1, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Above the roof truss: the cinder-block wall carries on up, for the tall follow view. */
+export function drawGymUp(ctx: Ctx, c: Colors, x0: number, x1: number, top: number): void {
+  const BH = 22, base = WALL_BASE;
+  ctx.save();
+  ctx.strokeStyle = c.mute; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.14;
+  // Same course lattice as the court's wall, continued upward from its last row.
+  let row = 0, y = base - 34;
+  for (; y > 40; y -= BH, row++);
+  for (; y > top; y -= BH, row++) {
+    path(ctx, [{ x: x0, y }, { x: x1, y }]); ctx.stroke();
+    for (let x = Math.floor((x0 - (row % 2 ? 0 : 28)) / 56) * 56 + (row % 2 ? 0 : 28); x < x1; x += 56) { path(ctx, [{ x, y: y - BH }, { x, y }]); ctx.stroke(); }
   }
   ctx.restore();
 }
